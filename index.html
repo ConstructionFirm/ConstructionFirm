@@ -686,11 +686,14 @@ function initDashboard() {
 // ════════════════════════════════════════════
 //  DB HELPERS
 // ════════════════════════════════════════════
+// ✅ NEW — all logged-in users see all company data
 async function dbGet(table) {
-  const { data, error } = await sb.from(table).select('*').eq('user_id', currentUserId).order('created_at',{ascending:false});
+  const { data, error } = await sb.from(table).select('*')
+    .order('created_at', {ascending: false});
   if (error) { console.error(table, error.message); return []; }
   return data || [];
 }
+
 async function dbInsert(table, obj) {
   obj.user_id = currentUserId;
   const { data, error } = await sb.from(table).insert(obj).select().single();
