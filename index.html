@@ -3,8 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ConstructCo – Management System</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>RamaConstruction – Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+      
+
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       * {
@@ -35,107 +38,82 @@
         height: 100vh;
         overflow: hidden;
       }
-      /* ── AUTH ── */
+      @media (max-width: 600px) {
+        body {
+          height: 100dvh;
+        }
+        #appWrapper {
+          height: 100dvh;
+        }
+      }
+      /* ── AUTH (dark theme) ── */
       #loginScreen {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        background: linear-gradient(135deg, #1e293b, #334155);
+        display: flex; align-items: center; justify-content: center;
+        min-height: 100vh; background: #0f172a; padding: 16px;
       }
       .auth-box {
-        background: var(--white);
-        border-radius: 16px;
-        padding: 36px 32px;
-        width: 100%;
-        max-width: 400px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        background: #1e293b; border-radius: 20px;
+        padding: 32px 28px 28px; width: 100%;
+        max-width: 380px; border: 1px solid #334155;
       }
-      .auth-logo {
-        text-align: center;
-        margin-bottom: 20px;
+      .auth-logo { text-align: center; margin-bottom: 24px; }
+      .auth-logo .logo-icon {
+        width: 72px; height: 72px; background: var(--primary);
+        border-radius: 20px; display: flex; align-items: center;
+        justify-content: center; font-size: 36px; margin: 0 auto 14px;
       }
-      .auth-logo span {
-        font-size: 48px;
-      }
-      .auth-logo h2 {
-        font-size: 22px;
-        font-weight: 700;
-        margin-top: 6px;
-      }
-      .auth-logo p {
-        color: var(--muted);
-        font-size: 13px;
-      }
+      .auth-logo h2 { font-size: 24px; font-weight: 800; color: #fff; margin-top: 0; }
+      .auth-logo p  { color: #64748b; font-size: 13px; margin-top: 4px; }
       .auth-tabs {
-        display: flex;
-        background: #f1f5f9;
-        border-radius: 8px;
-        padding: 4px;
-        margin-bottom: 20px;
+        display: flex; background: #0f172a; border-radius: 10px;
+        padding: 4px; margin-bottom: 20px;
       }
       .auth-tab {
-        flex: 1;
-        padding: 8px;
-        text-align: center;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--muted);
-        transition: 0.2s;
+        flex: 1; padding: 9px; text-align: center; border-radius: 8px;
+        cursor: pointer; font-size: 14px; font-weight: 600;
+        color: #475569; transition: 0.2s;
       }
       .auth-tab.active {
-        background: var(--white);
-        color: var(--text);
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        background: var(--primary); color: #fff;
+        box-shadow: 0 2px 10px rgba(249,115,22,0.35);
       }
-      .auth-form {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+      .auth-form { display: flex; flex-direction: column; gap: 12px; }
+      .auth-form input, .auth-form select {
+        padding: 12px 14px; border: 1.5px solid #334155; border-radius: 10px;
+        font-size: 14px; outline: none; transition: 0.2s;
+        width: 100%; background: #0f172a; color: #e2e8f0;
       }
-      .auth-form input,
-      .auth-form select {
-        padding: 10px 14px;
-        border: 1.5px solid var(--border);
-        border-radius: 8px;
-        font-size: 14px;
-        outline: none;
-        transition: 0.2s;
-        width: 100%;
+      .auth-form input::placeholder { color: #475569; }
+      .auth-form select { color: #94a3b8; }
+      .auth-form select option { background: #1e293b; color: #e2e8f0; }
+      .auth-form input:focus, .auth-form select:focus { border-color: var(--primary); }
+      .pw-wrap { position: relative; }
+      .pw-wrap input { padding-right: 44px; }
+      .pw-eye {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; cursor: pointer;
+        color: #475569; font-size: 15px; padding: 0; line-height: 1;
       }
-      .auth-form input:focus,
-      .auth-form select:focus {
-        border-color: var(--primary);
+      .auth-err { font-size: 13px; text-align: center; padding: 8px; border-radius: 8px; display: none; }
+      .auth-err.err { display: block; background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+      .auth-err.ok  { display: block; background: rgba(34,197,94,0.12); color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
+      .role-summary { font-size: 12px; margin-top: 4px; }
+      .role-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 0; border-bottom: 1px solid #1e293b; color: #94a3b8;
       }
-      .auth-err {
-        font-size: 13px;
-        text-align: center;
-        padding: 8px;
-        border-radius: 6px;
-        display: none;
+      .role-row:last-child { border-bottom: none; }
+      .role-icon {
+        width: 34px; height: 34px; border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 17px; flex-shrink: 0;
       }
-      .auth-err.err {
-        display: block;
-        background: #fef2f2;
-        color: var(--danger);
-        border: 1px solid #fecaca;
-      }
-      .auth-err.ok {
-        display: block;
-        background: #f0fdf4;
-        color: var(--success);
-        border: 1px solid #bbf7d0;
-      }
-      .role-summary {
-        font-size: 12px;
-        color: var(--muted);
-        background: #f8fafc;
-        border-radius: 8px;
-        padding: 10px 12px;
-        line-height: 1.8;
-      }
+      .ri-yellow { background: #fef3c7; }
+      .ri-red    { background: #fee2e2; }
+      .ri-gray   { background: #f1f5f9; }
+      .ri-blue   { background: #dbeafe; }
+      .role-name { font-weight: 600; color: #e2e8f0; font-size: 13px; }
+      .role-desc { font-size: 11px; color: #475569; margin-top: 1px; }
       /* ── LAYOUT ── */
       #appWrapper {
         display: none;
@@ -262,8 +240,9 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        overflow: hidden; /* clips sidebar */
         min-width: 0;
+        box-sizing: border-box;
       }
       .topbar {
         background: var(--white);
@@ -383,6 +362,97 @@
         gap: 10px;
         margin-bottom: 14px;
       }
+      /* ── CARD ── */
+      .card {
+        background: var(--white); border-radius: var(--radius);
+        padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        overflow: hidden; max-width: 100%;
+      }
+      .ch { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .ct { font-size: 14px; font-weight: 600; }
+      /* ── KPI CARD ── */
+      .kpi {
+        background: var(--white); border-radius: var(--radius);
+        padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden;
+      }
+      .kpi-icon {
+        width: 46px; height: 46px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; margin-bottom: 10px;
+      }
+      .ki-orange { background: #ffedd5; }
+      .ki-yellow { background: #fef3c7; }
+      .ki-blue   { background: #dbeafe; }
+      .ki-green  { background: #dcfce7; }
+      .kpi-val { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.2; }
+      .kpi-lbl { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 4px; }
+      .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+      /* ── SITE SUMMARY CARDS ── */
+      .site-card { border-bottom: 1px solid var(--border); padding: 14px 0; }
+      .site-card:last-child { border-bottom: none; }
+      .site-card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+      .site-card-name { font-size: 15px; font-weight: 700; }
+      .site-card-sup { font-size: 12px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+      .site-card-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+      .site-card-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .sc-stat .sc-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+      .sc-stat .sc-val { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 2px; }
+      .sc-val-pos { color: var(--success) !important; }
+      .sc-val-neg { color: var(--danger) !important; }
+      /* ── BOTTOM NAV ── */
+      #bottomNav {
+        display: none; position: fixed; bottom: 0; left: 0; right: 0;
+        height: 62px; background: #fff; border-top: 1px solid var(--border);
+        z-index: 500; box-shadow: 0 -2px 14px rgba(0,0,0,0.07);
+      }
+      .bnav-item {
+        flex: 1; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 3px; cursor: pointer;
+        color: #94a3b8; font-size: 10px; font-weight: 600;
+        padding: 8px 0; border: none; background: none; transition: color 0.2s;
+      }
+      .bnav-item.active { color: var(--primary); }
+      .bnav-icon { font-size: 20px; line-height: 1; }
+      /* ── TOPBAR BRAND (mobile) ── */
+      .topbar-brand { display: none; align-items: center; gap: 10px; }
+      .topbar-brand-icon {
+        width: 38px; height: 38px; background: var(--primary); border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 20px;
+      }
+      .topbar-brand-text h3 { color: #fff; font-size: 14px; font-weight: 700; margin: 0; }
+      .topbar-brand-text p  { color: #64748b; font-size: 10px; margin: 0; }
+      .topbar-ham-btn {
+        display: none; background: none; border: none;
+        color: #fff; font-size: 22px; cursor: pointer;
+        padding: 4px; line-height: 1;
+      }
+      /* ── BASE UTILITY CLASSES ── */
+      .fbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .fbar .fi,
+      .fbar select,
+      .fbar input {
+        box-sizing: border-box;
+        max-width: 100%;
+      }
+      .tw {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
       @media (max-width: 900px) {
         .g4 {
           grid-template-columns: repeat(2, 1fr);
@@ -398,55 +468,397 @@
         }
         .sidebar {
           position: fixed;
-          left: -220px;
+          left: -230px;
           top: 0;
           height: 100%;
+          z-index: 300;
+          transition: left 0.3s ease;
         }
         .sidebar.open {
           left: 0;
         }
+        .sidebar-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          z-index: 299;
+        }
+        .sidebar-overlay.show {
+          display: block;
+        }
+        .topbar {
+          padding: 0 12px;
+        }
+        .topbar-right .date-badge {
+          display: none;
+        }
+        .content {
+          padding: 10px;
+        }
+        .fbar {
+          gap: 6px;
+        }
+        .fi {
+          font-size: 12px;
+          padding: 6px 8px;
+        }
+        .kpi {
+          padding: 12px;
+        }
+        .kpi-val {
+          font-size: 20px;
+        }
+        .card {
+          padding: 12px;
+        }
+        .sc {
+          padding: 12px;
+        }
+        .sv {
+          font-size: 22px;
+        }
+        .chbox {
+          height: 160px;
+        }
+        .srow {
+          gap: 8px;
+        }
+        .sp {
+          padding: 10px 12px;
+          min-width: 90px;
+        }
+        .mf {
+          flex-wrap: wrap;
+        }
+        .mf .btn {
+          flex: 1;
+          min-width: 100px;
+        }
+        .export-btn {
+          display: none;
+        }
+      
+        /* ── Mobile Topbar → Dark Brand ── */
+        .topbar {
+          background: #1e293b; border-bottom: none;
+          height: 60px; padding: 0 12px;
+        }
+        .topbar-left .menu-btn { display: none; }
+        .topbar-left > div:not(.topbar-brand) { display: none; }
+        .topbar-brand { display: flex; }
+        .date-badge {
+          background: #334155; color: #94a3b8; border: none;
+          font-size: 11px; padding: 5px 9px;
+        }
+        .site-filter select {
+          background: #334155; color: #fff;
+          border-color: #475569; max-width: 90px; font-size: 11px;
+        }
+        .export-btn {
+          display: inline-block !important; background: var(--primary);
+          color: #fff; border: none; font-weight: 600;
+          border-radius: 8px; padding: 7px 12px; font-size: 12px;
+        }
+        .topbar-ham-btn { display: flex; }
+        #bottomNav { display: flex; }
+        .content { padding-bottom: 72px; }
+        .g2 > *, .g3 > * { min-width: 0; }
+        .card { overflow: hidden; max-width: 100%; }
+}
+
+      /* ── RESPONSIVE: MOBILE (≤600px) ── */
+      @media (max-width: 600px) {
+        body {
+          font-size: 13px;
+          overflow-x: hidden;
+        }
+
+        /* Layout */
+        .main {
+          width: 100%;
+          min-width: 0;
+          overflow: visible;
+        }
+        .content {
+          padding: 8px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+        .page {
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
+        /* Topbar */
+        .topbar {
+          padding: 0 10px;
+          height: 50px;
+        }
+        .page-bread {
+          display: none;
+        }
+        .topbar-right {
+          gap: 6px;
+        }
+        .site-filter select {
+          max-width: 100px;
+          font-size: 11px;
+        }
+
+        /* Grids */
+        .g4,
+        .g5 {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .g2,
+        .g3 {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        /* KPI cards */
+        .kpi {
+          padding: 10px 12px;
+        }
+        .kpi-val {
+          font-size: 18px;
+        }
+        .kpi-lbl {
+          font-size: 11px;
+        }
+        .kpi-sub {
+          display: none;
+        }
+
+        /* Filter bar — stacks vertically, all full width */
+        .fbar {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 6px;
+          width: 100%;
+        }
+        .fbar select,
+        .fbar input,
+        .fbar .fi {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          box-sizing: border-box;
+          font-size: 13px;
+        }
+        .fbar .btn {
+          width: 100%;
+        }
+
+        /* Table wrapper — horizontal scroll */
+        .tw {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          max-width: 100%;
+        }
+        table {
+          min-width: 480px;
+          font-size: 11.5px;
+        }
+        th,
+        td {
+          padding: 6px 7px;
+        }
+
+        /* Charts — contained, no overflow */
+        .chbox {
+          position: relative;
+          height: 180px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow: hidden;
+        }
+        canvas {
+          max-width: 100% !important;
+          width: 100% !important;
+        }
+
+        /* g3: stat card stacks below chart */
+        .g3 > .sc {
+          order: 2;
+        }
+        .g3 > .card {
+          order: 1;
+        }
+
+        /* Cards */
+        .card {
+          padding: 10px;
+          border-radius: 8px;
+        }
+        .sc {
+          padding: 10px;
+        }
+        .sv {
+          font-size: 20px;
+        }
+        .sr {
+          font-size: 12px;
+        }
+
+        /* Stat row */
+        .srow {
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .sp {
+          min-width: 80px;
+          padding: 8px 10px;
+          flex: 1 1 calc(50% - 6px);
+        }
+        .spv {
+          font-size: 17px;
+        }
+        .spl {
+          font-size: 10px;
+        }
+
+        /* Stock */
+        #stockList {
+          font-size: 12px;
+        }
+        #stockList > div {
+          margin-bottom: 8px;
+        }
+
+        /* Master tabs scroll */
+        .mtabs {
+          overflow-x: auto;
+          flex-wrap: nowrap;
+          gap: 4px;
+        }
+        .mtab {
+          padding: 7px 10px;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+
+        /* Action buttons */
+        .btn-sm-edit,
+        .btn-sm-danger {
+          font-size: 10px;
+          padding: 3px 7px;
+        }
+
+        /* Modal → bottom sheet */
+        .modal-overlay {
+          align-items: flex-end;
+          padding: 0;
+        }
+        .modal {
+          max-width: 100%;
+          width: 100%;
+          margin: 0;
+          border-radius: 16px 16px 0 0;
+          max-height: 92vh;
+        }
+        .row {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .row.full {
+          grid-template-columns: 1fr;
+        }
+        .mb {
+          padding: 14px;
+        }
+        .mh {
+          padding: 14px 16px;
+        }
+        .mf {
+          padding: 12px 14px;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .mf .btn {
+          flex: 1;
+          padding: 10px;
+          font-size: 13px;
+          min-width: 100px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+          width: 240px;
+          left: -250px;
+        }
+        .sidebar.open {
+          left: 0;
+        }
+        .brand-info h3 {
+          font-size: 13px;
+        }
+        .sc .sl {
+          font-size: 10px;
+        }
+
+        /* Auth */
+        .auth-box {
+          padding: 24px 18px;
+          margin: 12px;
+        }
+
+        /* Toast */
+        .toast {
+          bottom: 12px;
+          right: 12px;
+          left: 12px;
+          font-size: 12px;
+        }
+
+        /* Warning banner */
+        #noSiteBanner {
+          font-size: 12px;
+          padding: 8px 12px;
+        }
       }
-      .card {
-        background: var(--white);
-        border-radius: var(--radius);
-        padding: 16px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+
+      /* ── RESPONSIVE: SMALL PHONES (≤380px) ── */
+      @media (max-width: 380px) {
+        .g4 {
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+        }
+        .kpi-val {
+          font-size: 16px;
+        }
+        .kpi-lbl {
+          font-size: 10px;
+        }
+        .nav-item {
+          padding: 9px 10px;
+          font-size: 12.5px;
+        }
+        th,
+        td {
+          font-size: 10.5px;
+          padding: 6px 6px;
+        }
+        .topbar {
+          height: 46px;
+        }
+        .page-title {
+          font-size: 14px;
+        }
+        .fbar {
+          gap: 4px;
+        }
+        table {
+          min-width: 420px;
+          font-size: 10.5px;
+        }
       }
-      .ch {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-      .ct {
-        font-weight: 700;
-        font-size: 14px;
-      }
-      .cb {
-        overflow-x: auto;
-      }
-      .kpi {
-        background: var(--white);
-        border-radius: var(--radius);
-        padding: 16px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-        border-left: 4px solid var(--primary);
-      }
-      .kpi-val {
-        font-size: 24px;
-        font-weight: 800;
-        color: var(--primary);
-      }
-      .kpi-lbl {
-        font-size: 12px;
-        color: var(--muted);
-        margin-top: 2px;
-      }
-      .kpi-sub {
-        font-size: 11px;
-        color: var(--muted);
-        margin-top: 4px;
-      }
+
       /* ── TABLE ── */
       .tw {
         overflow-x: auto;
@@ -590,6 +1002,14 @@
       .chbox {
         position: relative;
         height: 180px;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+      .chbox canvas {
+        max-width: 100% !important;
+        display: block;
       }
       /* ── MASTER TABS ── */
       .mtabs {
@@ -773,6 +1193,483 @@
           transform: rotate(360deg);
         }
       }
+    
+      /* === MOBILE UI REFRESH PATCH === */
+      .mobile-alt-view { display: none; }
+      .mobile-summary-card {
+        background: #20283a;
+        color: #fff;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        margin-bottom: 14px;
+      }
+      .mobile-summary-title {
+        font-size: 11px;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.65);
+        margin-bottom: 8px;
+      }
+      .mobile-summary-value {
+        font-size: 28px;
+        line-height: 1;
+        font-weight: 800;
+        color: var(--primary);
+        margin-bottom: 14px;
+      }
+      .mobile-summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 18px;
+      }
+      .mobile-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 13px;
+        color: rgba(255,255,255,0.88);
+      }
+      .mobile-summary-row strong { color: #fff; }
+      .mobile-split-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .mobile-mini-stat {
+        background: #fff;
+        border-radius: 16px;
+        padding: 16px 14px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      }
+      .mobile-mini-icon { font-size: 18px; margin-bottom: 10px; }
+      .mobile-mini-value {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 4px;
+      }
+      .mobile-mini-label { color: var(--muted); font-size: 12px; }
+      .mobile-white-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        margin-bottom: 14px;
+        overflow: hidden;
+      }
+      .mobile-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .mobile-section-title {
+        font-size: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .mobile-count-pill {
+        background: #dcfce7;
+        color: #166534;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 10px;
+        white-space: nowrap;
+      }
+      .mobile-list { display: flex; flex-direction: column; gap: 12px; }
+      .mobile-entry {
+        border-top: 1px solid #f1f5f9;
+        padding-top: 12px;
+      }
+      .mobile-list .mobile-entry:first-child {
+        border-top: none;
+        padding-top: 0;
+      }
+      .mobile-entry-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .mobile-entry-name {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1.2;
+      }
+      .mobile-entry-sub {
+        color: #94a3b8;
+        font-size: 12px;
+        margin-top: 2px;
+      }
+      .mobile-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .mobile-meta-item {
+        min-width: 0;
+      }
+      .mobile-meta-label {
+        color: #94a3b8;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+      }
+      .mobile-meta-value {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        word-break: break-word;
+      }
+      .mobile-remarks {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 4px 0 0;
+      }
+      .mobile-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .mobile-action-btn {
+        flex: 1;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .mobile-action-btn.edit {
+        background: #eff6ff;
+        color: #2563eb;
+      }
+      .mobile-action-btn.delete {
+        background: #fef2f2;
+        color: #ef4444;
+      }
+      .mobile-stock-row { margin-bottom: 14px; }
+      .mobile-stock-row:last-child { margin-bottom: 0; }
+      .mobile-stock-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+      .mobile-stock-line strong { font-size: 16px; }
+      .mobile-stock-qty.negative { color: #ef4444; font-weight: 800; }
+      .mobile-stock-bar {
+        height: 8px;
+        border-radius: 999px;
+        background: #eef2f7;
+        overflow: hidden;
+      }
+      .mobile-stock-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--primary);
+      }
+      .mobile-stock-fill.negative { background: #fb7185; }
+      .mobile-txn-meta {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .mobile-amount {
+        font-size: 15px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .mobile-amount.pos { color: var(--success); }
+      .mobile-amount.neg { color: var(--danger); }
+      .mobile-master-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        margin-bottom: 14px;
+      }
+      .mobile-master-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .mobile-master-left {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        min-width: 0;
+      }
+      .mobile-master-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff7ed;
+        color: var(--primary);
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+      .mobile-master-code {
+        color: #94a3b8;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 2px;
+      }
+      .mobile-master-name {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.2;
+        color: var(--text);
+      }
+      .mobile-master-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+      .mobile-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .mobile-info-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .mobile-info-box .mobile-meta-label { margin-bottom: 4px; }
+      .mobile-empty {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        padding: 16px 8px;
+      }
+      @media (max-width: 600px) {
+        .content {
+          padding: 8px 8px calc(92px + env(safe-area-inset-bottom, 0px));
+          overflow-y: auto;
+          overflow-x: hidden;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+        #bottomNav {
+          height: calc(62px + env(safe-area-inset-bottom, 0px));
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .mobile-alt-view { display: block; }
+        #page-labour > .g3 > .card:first-child,
+        #page-labour > .g3 > .sc,
+        #page-materials > .g3,
+        #page-cashbook > .g5,
+        #page-cashbook > .g2,
+        #ms-sites > .card,
+        #ms-workers > .card,
+        #ms-materials > .card {
+          display: none !important;
+        }
+        .mobile-meta-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      /* === END MOBILE UI REFRESH PATCH === */
+
+    
+      /* === ATTENDANCE MODAL REFRESH === */
+      .attendance-modal-shell {
+        max-width: 560px;
+      }
+      .attendance-modal-head {
+        background: #1f2937;
+        border-bottom: none;
+        color: #fff;
+      }
+      .attendance-modal-head h3 {
+        color: #fff;
+        margin: 0;
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .attendance-subtitle {
+        color: #9ca3af;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      .attendance-modal-head .close {
+        color: #fff;
+      }
+      .attendance-modal-body {
+        background: #f8fafc;
+      }
+      .attendance-block {
+        background: #fff;
+        border: 1px solid #eef2f7;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      }
+      .attendance-block-title {
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.6px;
+        color: #6b7280;
+        margin-bottom: 12px;
+      }
+      .attendance-block label {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: 0;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+      .attendance-block input,
+      .attendance-block select,
+      .attendance-block textarea {
+        width: 100%;
+        padding: 13px 14px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 14px;
+        font-size: 15px;
+        outline: none;
+        background: #fff;
+        font-family: inherit;
+      }
+      .attendance-block textarea {
+        resize: vertical;
+        min-height: 96px;
+      }
+      .attendance-block input:focus,
+      .attendance-block select:focus,
+      .attendance-block textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(249,115,22,0.08);
+      }
+      .attendance-pill-grid {
+        display: grid;
+        gap: 10px;
+      }
+      .attendance-pill-grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+      .attendance-pill-btn {
+        border: 1.5px solid #e5e7eb;
+        background: #fff;
+        color: #4b5563;
+        border-radius: 14px;
+        min-height: 52px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .attendance-pill-btn.active {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(34,197,94,0.18);
+      }
+      .attendance-pill-btn.halfday-active {
+        background: #facc15;
+        border-color: #facc15;
+        color: #3f3f46;
+        box-shadow: 0 8px 18px rgba(250,204,21,0.18);
+      }
+      .attendance-pill-btn.absent-active {
+        background: #ffffff;
+        border-color: #e5e7eb;
+        color: #4b5563;
+      }
+      .attendance-pill-btn.leave-active {
+        background: #ffffff;
+        border-color: #e5e7eb;
+        color: #4b5563;
+      }
+      .attendance-pill-btn.gender-active {
+        background: #f8fafc;
+        border-color: #dbeafe;
+        color: #1f2937;
+      }
+      .attendance-pay-box {
+        margin-top: 12px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 14px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: #c2410c;
+      }
+      .attendance-pay-box span {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .attendance-pay-box strong {
+        font-size: 28px;
+        line-height: 1;
+        color: var(--primary);
+      }
+      .attendance-modal-footer {
+        border-top: none;
+        background: #f8fafc;
+        padding-top: 0;
+      }
+      .attendance-save-btn {
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 14px;
+        font-size: 17px;
+      }
+      @media (max-width: 600px) {
+        .attendance-modal-shell {
+          width: 100%;
+          max-width: 100%;
+          min-height: 100dvh;
+          margin: 0;
+          border-radius: 0;
+          max-height: 100dvh;
+        }
+        .attendance-modal-head {
+          padding: 14px 16px;
+        }
+        .attendance-modal-head h3 {
+          font-size: 28px;
+        }
+        .attendance-modal-body {
+          padding: 14px;
+        }
+        .attendance-modal-footer {
+          padding: 0 14px 14px;
+          background: #f8fafc;
+        }
+        .attendance-block {
+          border-radius: 18px;
+          padding: 16px 14px;
+        }
+        .attendance-pill-btn {
+          min-height: 54px;
+          font-size: 15px;
+        }
+      }
+      /* === END ATTENDANCE MODAL REFRESH === */
+
     </style>
   </head>
   <body>
@@ -780,60 +1677,56 @@
     <div id="loginScreen">
       <div class="auth-box">
         <div class="auth-logo">
-          <span>🏗️</span>
+          <div class="logo-icon">🏗️</div>
           <h2>ConstructCo</h2>
           <p>Construction Management System</p>
         </div>
         <div class="auth-tabs">
-          <div
-            class="auth-tab active"
-            id="tabLogin"
-            onclick="switchAuthTab('login')"
-          >
-            Login
-          </div>
-          <div
-            class="auth-tab"
-            id="tabSignup"
-            onclick="switchAuthTab('signup')"
-          >
-            Signup
-          </div>
+          <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</div>
+          <div class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Create Account</div>
         </div>
+        <!-- LOGIN FORM -->
         <div id="loginForm" class="auth-form">
-          <input id="li_email" type="email" placeholder="Email address" />
-          <input id="li_pass" type="password" placeholder="Password" />
-          <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
-            Sign In
-          </button>
+          <input id="li_email" type="email" placeholder="you@example.com" />
+          <div class="pw-wrap">
+            <input id="li_pass" type="password" placeholder="••••••••" />
+            <button class="pw-eye" type="button" onclick="togglePw('li_pass',this)">👁</button>
+          </div>
+          <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
         </div>
-        <div id="signupForm" class="auth-form" style="display: none">
-          <input id="su_name" placeholder="Full Name" />
-          <input id="su_email" type="email" placeholder="Email address" />
-          <input
-            id="su_pass"
-            type="password"
-            placeholder="Password (min 6 chars)"
-          />
+        <!-- SIGNUP FORM -->
+        <div id="signupForm" class="auth-form" style="display:none">
           <select id="su_role">
             <option value="">-- Select Role --</option>
-            <option value="admin">👑 Admin – Full access + Masters</option>
-            <option value="supervisor">
-              🦺 Supervisor – Labour + Materials
-            </option>
-            <option value="engineer">
-              ⚙️ Engineer – Labour + Materials only
-            </option>
-            <option value="accountant">🗂️ Accountant – Cashbook only</option>
+            <option value="admin">Admin</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="engineer">Engineer</option>
+            <option value="accountant">Accountant</option>
           </select>
-          <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">
-            Create Account
-          </button>
+          <input id="su_name" placeholder="Full Name" />
+          <input id="su_email" type="email" placeholder="you@example.com" />
+          <div class="pw-wrap">
+            <input id="su_pass" type="password" placeholder="Password (min 6 chars)" />
+            <button class="pw-eye" type="button" onclick="togglePw('su_pass',this)">👁</button>
+          </div>
+          <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">Create Account</button>
           <div class="role-summary">
-            👑 Admin → Full access + Masters<br />
-            🦺 Supervisor → Labour, Materials, Cashbook (no Masters admin)<br />
-            ⚙️ Engineer → Labour + Materials only<br />
-            🗂️ Accountant → Cashbook only
+            <div class="role-row">
+              <div class="role-icon ri-yellow">👑</div>
+              <div><div class="role-name">Admin</div><div class="role-desc">Full access + Masters</div></div>
+            </div>
+            <div class="role-row">
+              <div class="role-icon ri-red">🦺</div>
+              <div><div class="role-name">Supervisor</div><div class="role-desc">Labour + Materials + Cashbook</div></div>
+            </div>
+            <div class="role-row">
+              <div class="role-icon ri-gray">⚙️</div>
+              <div><div class="role-name">Engineer</div><div class="role-desc">Labour + Materials only</div></div>
+            </div>
+            <div class="role-row">
+              <div class="role-icon ri-blue">🗂️</div>
+              <div><div class="role-name">Accountant</div><div class="role-desc">Cashbook only</div></div>
+            </div>
           </div>
         </div>
         <div id="li_err" class="auth-err"></div>
@@ -846,11 +1739,16 @@
       style="display: none; height: 100vh; display: none; flex-direction: row"
     >
       <!-- SIDEBAR -->
+      <div
+        class="sidebar-overlay"
+        id="sidebarOverlay"
+        onclick="closeSidebar()"
+      ></div>
       <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
           <div class="brand-av">C</div>
           <div class="brand-info">
-            <h3>ConstructCo</h3>
+            <h3>RamaConstruction</h3>
             <p>Management System</p>
           </div>
         </div>
@@ -903,15 +1801,17 @@
       <!-- MAIN -->
       <div class="main">
         <div class="topbar">
+          <!-- Mobile brand (shown ≤900px) -->
           <div class="topbar-left">
-            <button
-              class="menu-btn"
-              onclick="
-                document.getElementById('sidebar').classList.toggle('open')
-              "
-            >
-              ☰
-            </button>
+            <div class="topbar-brand">
+              <div class="topbar-brand-icon">🏗️</div>
+              <div class="topbar-brand-text">
+                <h3>ConstructCo</h3>
+                <p>Management System</p>
+              </div>
+            </div>
+            <!-- Desktop: hamburger + title -->
+            <button class="menu-btn" onclick="toggleSidebar()">☰</button>
             <div>
               <div class="page-title" id="pgT">Overview</div>
               <div class="page-bread" id="pgB">Dashboard › Overview</div>
@@ -920,11 +1820,12 @@
           <div class="topbar-right">
             <div class="date-badge">📅 <span id="todayDate"></span></div>
             <div class="site-filter">
-              <select id="gSite" onchange="renderOverview()">
+              <select id="gSite" onchange="syncGlobalSite()">
                 <option value="">All Sites</option>
               </select>
             </div>
-            <button class="export-btn" onclick="exportData()">↧ Export</button>
+            <button class="export-btn" onclick="exportData()">⬇ Export</button>
+            <button class="topbar-ham-btn" onclick="toggleSidebar()">☰</button>
           </div>
         </div>
 
@@ -933,23 +1834,27 @@
           <div class="page active" id="page-overview">
             <div class="g4">
               <div class="kpi">
+                <div class="kpi-icon ki-orange">🏗️</div>
                 <div class="kpi-val" id="ov-sites">0</div>
-                <div class="kpi-lbl">🏗️ Active Sites</div>
+                <div class="kpi-lbl">Active Sites</div>
                 <div class="kpi-sub">Construction sites</div>
               </div>
               <div class="kpi">
+                <div class="kpi-icon ki-yellow">👷</div>
                 <div class="kpi-val" id="ov-labour">₹0</div>
-                <div class="kpi-lbl">👷 Labour Cost (Today)</div>
+                <div class="kpi-lbl">Labour Cost (Today)</div>
                 <div class="kpi-sub" id="ov-present">0 present today</div>
               </div>
               <div class="kpi">
+                <div class="kpi-icon ki-blue">🧱</div>
                 <div class="kpi-val" id="ov-mat">₹0</div>
-                <div class="kpi-lbl">🧱 Material Cost (All)</div>
+                <div class="kpi-lbl">Material Cost (All)</div>
                 <div class="kpi-sub">Total IN value</div>
               </div>
               <div class="kpi">
+                <div class="kpi-icon ki-green">💰</div>
                 <div class="kpi-val" id="ov-cash">₹0</div>
-                <div class="kpi-lbl">💰 Net Cash Balance</div>
+                <div class="kpi-lbl">Net Cash Balance</div>
                 <div class="kpi-sub">Sent minus expenses</div>
               </div>
             </div>
@@ -967,23 +1872,7 @@
             </div>
             <div class="card">
               <div class="ch"><div class="ct">📋 Site Summary</div></div>
-              <div class="tw">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Site</th>
-                      <th>Supervisor</th>
-                      <th>Labour Cost</th>
-                      <th>Material Cost</th>
-                      <th>Cash Sent</th>
-                      <th>Expenses</th>
-                      <th>Balance</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="ovTable"></tbody>
-                </table>
-              </div>
+              <div class="site-cards" id="ovTable"></div>
             </div>
           </div>
 
@@ -996,7 +1885,14 @@
                 id="labDate"
                 onchange="renderLabour()"
               />
-              <select class="fi" id="labSite" onchange="renderLabour()">
+              <select
+                class="fi"
+                id="labSite"
+                onchange="
+                  document.getElementById('gSite').value = this.value;
+                  renderLabour();
+                "
+              >
                 <option value="">All Sites</option>
               </select>
               <select class="fi" id="labDes" onchange="renderLabour()">
@@ -1081,7 +1977,14 @@
           <!-- MATERIALS -->
           <div class="page" id="page-materials">
             <div class="fbar">
-              <select class="fi" id="matSite" onchange="renderMaterials()">
+              <select
+                class="fi"
+                id="matSite"
+                onchange="
+                  document.getElementById('gSite').value = this.value;
+                  renderMaterials();
+                "
+              >
                 <option value="">All Sites</option>
               </select>
               <select class="fi" id="matName" onchange="renderMaterials()">
@@ -1162,7 +2065,14 @@
           <!-- CASHBOOK -->
           <div class="page" id="page-cashbook">
             <div class="fbar">
-              <select class="fi" id="cashSite" onchange="renderCash()">
+              <select
+                class="fi"
+                id="cashSite"
+                onchange="
+                  document.getElementById('gSite').value = this.value;
+                  renderCash();
+                "
+              >
                 <option value="">All Sites</option>
               </select>
               <select class="fi" id="cashType" onchange="renderCash()">
@@ -1321,8 +2231,11 @@
                   class="btn btn-primary"
                   id="btnAddSite"
                   onclick="
-                    openModal('siteModal');
                     editId = null;
+                    document.getElementById('siteModalTitle').textContent =
+                      'Add Site';
+                    populateSiteUserDropdowns();
+                    openModal('siteModal');
                   "
                 >
                   + Add Site
@@ -1338,6 +2251,7 @@
                         <th>Address</th>
                         <th>Start Date</th>
                         <th>Supervisor</th>
+                        <th>Engineers</th>
                         <th>Phone</th>
                         <th>Status</th>
                         <th>Action</th>
@@ -1357,7 +2271,14 @@
                   oninput="renderWorkers(this.value)"
                   style="flex: 1"
                 />
-                <select class="fi" id="wfSite" onchange="renderWorkers()">
+                <select
+                  class="fi"
+                  id="wfSite"
+                  onchange="
+                    document.getElementById('gSite').value = this.value;
+                    renderWorkers();
+                  "
+                >
                   <option value="">All Sites</option>
                 </select>
                 <select class="fi" id="wfDes" onchange="renderWorkers()">
@@ -1481,8 +2402,37 @@
             </div>
           </div>
           <div class="row">
-            <div><label>Supervisor</label><input id="s_sup" /></div>
+            <div>
+              <label>Supervisor</label>
+              <select id="s_sup">
+                <option value="">-- Select Supervisor --</option>
+              </select>
+            </div>
             <div><label>Phone</label><input id="s_phone" /></div>
+          </div>
+          <div class="row full">
+            <div>
+              <label
+                >Assign Engineers
+                <small style="font-weight: 400; color: var(--muted)"
+                  >(Ctrl/Cmd = multi-select)</small
+                ></label
+              >
+              <select
+                id="s_engineers"
+                multiple
+                style="
+                  height: 90px;
+                  width: 100%;
+                  padding: 6px;
+                  border: 1.5px solid var(--border);
+                  border-radius: 8px;
+                  font-size: 13px;
+                  outline: none;
+                  background: #fff;
+                "
+              ></select>
+            </div>
           </div>
         </div>
         <div class="mf">
@@ -1613,86 +2563,111 @@
     </div>
     <!-- Attendance Modal -->
     <div class="modal-overlay" id="labModal">
-      <div class="modal">
-        <div class="mh">
-          <h3 id="labModalTitle">Add Attendance</h3>
+      <div class="modal attendance-modal-shell">
+        <div class="mh attendance-modal-head">
+          <div>
+            <h3 id="labModalTitle">Add Attendance</h3>
+            <p class="attendance-subtitle">Labour · Add Attendance</p>
+          </div>
           <button class="close" onclick="closeModal('labModal')">×</button>
         </div>
-        <div class="mb">
-          <div class="row">
-            <div><label>Date *</label><input type="date" id="l_date" /></div>
-            <div>
-              <label>Site *</label
-              ><select id="l_site" onchange="populateWorkerDropdown()"></select>
+        <div class="mb attendance-modal-body">
+          <div class="attendance-block">
+            <div class="attendance-block-title">Worker Details</div>
+            <div class="row full">
+              <div>
+                <label>Worker Name *</label>
+                <select id="l_worker" onchange="autoFillWorker()">
+                  <option value="">Select worker</option>
+                </select>
+              </div>
+            </div>
+            <div class="row full">
+              <div>
+                <label>Designation *</label>
+                <select id="l_des">
+                  <option value="">Select designation</option>
+                  <option>Mason</option>
+                  <option>Labour</option>
+                  <option>Helper</option>
+                  <option>Carpenter</option>
+                  <option>Barbender</option>
+                </select>
+              </div>
+            </div>
+            <div class="row full">
+              <div>
+                <label>Gender *</label>
+                <input type="hidden" id="l_gender" />
+                <div class="attendance-pill-grid two" id="genderBtns">
+                  <button type="button" class="attendance-pill-btn" data-value="Male" onclick="setAttendanceGender('Male')">Male</button>
+                  <button type="button" class="attendance-pill-btn" data-value="Female" onclick="setAttendanceGender('Female')">Female</button>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="row">
-            <div>
-              <label>Worker *</label
-              ><select id="l_worker" onchange="autoFillWorker()">
-                <option value="">-- Select Worker --</option>
-              </select>
+
+          <div class="attendance-block">
+            <div class="attendance-block-title">Site & Date</div>
+            <div class="row full">
+              <div>
+                <label>Site *</label>
+                <select id="l_site" onchange="populateWorkerDropdown()">
+                  <option value="">Select site</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label>Designation</label
-              ><input id="l_des" readonly style="background: #f1f5f9" />
-            </div>
-          </div>
-          <div class="row">
-            <div>
-              <label>Gender</label
-              ><input id="l_gender" readonly style="background: #f1f5f9" />
-            </div>
-            <div>
-              <label>Wage/Day (₹)</label><input type="number" id="l_wage" />
+            <div class="row full">
+              <div>
+                <label>Date *</label>
+                <input type="date" id="l_date" />
+              </div>
             </div>
           </div>
-          <div class="row">
-            <div>
-              <label>Status *</label
-              ><select id="l_status" onchange="calcPay()">
-                <option>Present</option>
-                <option>Half Day</option>
-                <option>Absent</option>
-                <option>Leave</option>
-              </select>
-            </div>
-            <div>
-              <label>Working Hours</label
-              ><input
-                type="number"
-                id="l_hours"
-                placeholder="e.g. 8"
-                oninput="calcPay()"
-              />
+
+          <div class="attendance-block">
+            <div class="attendance-block-title">Attendance Status</div>
+            <input type="hidden" id="l_status" value="Present" />
+            <div class="attendance-pill-grid two" id="statusBtns">
+              <button type="button" class="attendance-pill-btn active success" data-value="Present" onclick="setAttendanceStatus('Present')">✓ Present</button>
+              <button type="button" class="attendance-pill-btn" data-value="Half Day" onclick="setAttendanceStatus('Half Day')">Half Day</button>
+              <button type="button" class="attendance-pill-btn" data-value="Absent" onclick="setAttendanceStatus('Absent')">Absent</button>
+              <button type="button" class="attendance-pill-btn" data-value="Leave" onclick="setAttendanceStatus('Leave')">Leave</button>
             </div>
           </div>
-          <div class="row">
-            <div>
-              <label>Pay (₹)</label
-              ><input
-                type="number"
-                id="l_pay"
-                readonly
-                style="
-                  background: #f1f5f9;
-                  font-weight: 700;
-                  color: var(--primary);
-                "
-              />
+
+          <div class="attendance-block">
+            <div class="attendance-block-title">Pay Details</div>
+            <div class="row">
+              <div>
+                <label>Hours Worked</label>
+                <input type="number" id="l_hours" placeholder="8" oninput="calcPay()" />
+              </div>
+              <div>
+                <label>Wage/Day (₹)</label>
+                <input type="number" id="l_wage" oninput="calcPay()" />
+              </div>
             </div>
-            <div><label>Remarks</label><input id="l_remarks" /></div>
+            <div class="attendance-pay-box">
+              <span>Calculated Pay</span>
+              <strong id="attendancePayPreview">₹0</strong>
+            </div>
+            <input type="hidden" id="l_pay" />
+          </div>
+
+          <div class="attendance-block">
+            <div>
+              <label>Remarks (Optional)</label>
+              <textarea id="l_remarks" rows="3" placeholder="Any notes about this attendance..."></textarea>
+            </div>
           </div>
         </div>
-        <div class="mf">
-          <button class="btn btn-outline" onclick="closeModal('labModal')">
-            Cancel</button
-          ><button class="btn btn-primary" onclick="saveAttendance()">
-            Save
-          </button>
+        <div class="mf attendance-modal-footer">
+          <button class="btn btn-primary attendance-save-btn" onclick="saveAttendance()">Save Attendance</button>
         </div>
       </div>
     </div>
+
     <!-- Material Entry Modal -->
     <div class="modal-overlay" id="matModal">
       <div class="modal">
@@ -1827,7 +2802,7 @@
 
     <script>
       // ── SUPABASE CREDENTIALS ──
-     const SUPABASE_URL = "https://olylorarbaizpogbbjmb.supabase.co";
+      const SUPABASE_URL = "https://olylorarbaizpogbbjmb.supabase.co";
       const SUPABASE_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9seWxvcmFyYmFpenBvZ2Jiam1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODEzMjIsImV4cCI6MjA4OTA1NzMyMn0.ESovUr-sRcrrFyLRY9g6dFeW-opcJUf0qyw_CbKBDVA";
       const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1835,6 +2810,65 @@
       let editId = null,
         currentUserId = null,
         currentRole = null;
+      let allowedSiteIds = null; // null = no restriction (admin/accountant)
+
+      // ── SITE ACCESS FILTER ──
+      async function loadAllowedSites(user) {
+        if (currentRole === "admin" || currentRole === "accountant") {
+          allowedSiteIds = null;
+          return;
+        }
+        const uid = user.id;
+        const userName = (
+          (user.user_metadata && user.user_metadata.fullname) ||
+          (user.user_metadata && user.user_metadata.full_name) ||
+          user.email.split("@")[0]
+        )
+          .toLowerCase()
+          .trim();
+
+        // Fetch ALL sites (bypass allowedSiteIds filter) to calculate access
+        const { data: sites } = await sb
+          .from("sites")
+          .select("id, supervisor, supervisorid, engineerids");
+        if (!sites || sites.length === 0) {
+          allowedSiteIds = [];
+          return;
+        }
+
+        if (currentRole === "supervisor") {
+          allowedSiteIds = sites
+            .filter((s) => {
+              // Match by UUID (new sites)
+              if (s.supervisorid && s.supervisorid === uid) return true;
+              // Fallback: match by supervisor name text (old sites)
+              if (
+                s.supervisor &&
+                s.supervisor.toLowerCase().trim() === userName
+              )
+                return true;
+              return false;
+            })
+            .map((s) => s.id);
+        } else if (currentRole === "engineer") {
+          allowedSiteIds = sites
+            .filter((s) => {
+              // Match by UUID array (new sites)
+              if (Array.isArray(s.engineerids) && s.engineerids.includes(uid))
+                return true;
+              return false;
+            })
+            .map((s) => s.id);
+        } else {
+          allowedSiteIds = null;
+        }
+
+        // If still no sites found, warn but don't lock out completely
+        // (admin should assign sites to this user)
+        if (allowedSiteIds !== null && allowedSiteIds.length === 0) {
+          console.warn("No sites assigned to this user:", userName, uid);
+        }
+      }
       let labChart2, siteChart2, trendChart2;
 
       // ── DATE HELPER (IST-safe, no UTC offset bug) ──
@@ -2028,6 +3062,15 @@
           err.textContent = error.message;
           return;
         }
+        // Save profile so we can look up users by role later
+        if (data.user) {
+          await sb.from("profiles").upsert({
+            id: data.user.id,
+            full_name: name,
+            role: role,
+            email: email,
+          });
+        }
         err.className = "auth-err ok";
         err.textContent = "Account created! You can now login.";
         switchAuthTab("login");
@@ -2043,7 +3086,7 @@
         document.getElementById("li_email").value = "";
         document.getElementById("li_pass").value = "";
       }
-      function showApp(user) {
+      async function showApp(user) {
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("appWrapper").style.display = "flex";
         currentRole =
@@ -2055,6 +3098,19 @@
         document.getElementById("userRoleLbl").textContent = currentRole;
         document.getElementById("userAv").textContent = name[0].toUpperCase();
         applyRoleVisibility();
+        await loadAllowedSites(user);
+        // Auto-create profile entry if missing (handles pre-profiles-table users)
+        sb.from("profiles")
+          .upsert(
+            {
+              id: user.id,
+              full_name: name,
+              role: currentRole,
+              email: user.email,
+            },
+            { onConflict: "id" },
+          )
+          .then(() => {});
         initDashboard();
       }
 
@@ -2106,6 +3162,24 @@
           const el = document.getElementById(id);
           if (el) el.value = td;
         });
+        // Show warning if supervisor/engineer has no assigned sites
+        const existing = document.getElementById("noSiteBanner");
+        if (allowedSiteIds !== null && allowedSiteIds.length === 0) {
+          if (!existing) {
+            const banner = document.createElement("div");
+            banner.id = "noSiteBanner";
+            banner.style.cssText =
+              "background:#fef3c7;color:#92400e;padding:10px 20px;" +
+              "font-size:13px;font-weight:600;text-align:center;" +
+              "border-bottom:2px solid #f59e0b;flex-shrink:0;";
+            banner.textContent =
+              "⚠️ You have not been assigned to any site yet. Ask your Admin to assign you via Masters → Sites → Edit.";
+            const main = document.querySelector(".main");
+            if (main) main.prepend(banner);
+          }
+        } else if (existing) {
+          existing.remove();
+        }
         populateAllDropdowns();
         renderAll();
       }
@@ -2121,10 +3195,27 @@
 
       // ── DB HELPERS ──
       async function dbGet(table) {
-        const { data, error } = await sb
+        let query = sb
           .from(table)
           .select("*")
           .order("created_at", { ascending: false });
+        // Apply site-level access filter for supervisor / engineer
+        if (
+          allowedSiteIds !== null &&
+          ["attendance", "material_entries", "cashbook"].includes(table)
+        ) {
+          if (allowedSiteIds.length === 0) return [];
+          query = query.in("site_id", allowedSiteIds);
+        }
+        if (allowedSiteIds !== null && table === "sites") {
+          if (allowedSiteIds.length === 0) return [];
+          query = query.in("id", allowedSiteIds);
+        }
+        if (allowedSiteIds !== null && table === "workers") {
+          if (allowedSiteIds.length === 0) return [];
+          query = query.in("site_id", allowedSiteIds);
+        }
+        const { data, error } = await query;
         if (error) {
           console.error(table, error.message);
           return [];
@@ -2151,6 +3242,38 @@
       }
 
       // ── DROPDOWNS ──
+      async function populateSiteUserDropdowns() {
+        const { data: profiles, error } = await sb
+          .from("profiles")
+          .select("id, full_name, role")
+          .in("role", ["supervisor", "engineer"]);
+        const list = profiles || [];
+        const supervisors = list.filter((p) => p.role === "supervisor");
+        const engineers = list.filter((p) => p.role === "engineer");
+        const supEl = document.getElementById("s_sup");
+        if (supEl) {
+          if (supervisors.length === 0) {
+            supEl.innerHTML = `<option value="">-- No supervisors registered yet --</option>`;
+          } else {
+            supEl.innerHTML =
+              `<option value="">-- Select Supervisor --</option>` +
+              supervisors
+                .map((u) => `<option value="${u.id}">${u.full_name}</option>`)
+                .join("");
+          }
+        }
+        const engEl = document.getElementById("s_engineers");
+        if (engEl) {
+          if (engineers.length === 0) {
+            engEl.innerHTML = `<option value="" disabled>No engineers registered yet</option>`;
+          } else {
+            engEl.innerHTML = engineers
+              .map((u) => `<option value="${u.id}">${u.full_name}</option>`)
+              .join("");
+          }
+        }
+      }
+
       async function populateAllDropdowns() {
         const sites = await dbGet("sites");
         const sOpts = sites
@@ -2191,7 +3314,7 @@
           (w) => w.status === "Active" && (!siteId || w.site_id === siteId),
         );
         document.getElementById("l_worker").innerHTML =
-          `<option value="">-- Select Worker --</option>` +
+          `<option value="">Select worker</option>` +
           filt
             .map(
               (w) =>
@@ -2202,11 +3325,16 @@
       function autoFillWorker() {
         const sel = document.getElementById("l_worker");
         const opt = sel.options[sel.selectedIndex];
-        if (!opt || !opt.value) return;
+        if (!opt || !opt.value) {
+          document.getElementById("l_des").value = "";
+          setAttendanceGender("");
+          document.getElementById("l_wage").value = 0;
+          calcPay();
+          return;
+        }
         document.getElementById("l_des").value =
           opt.getAttribute("data-des") || "";
-        document.getElementById("l_gender").value =
-          opt.getAttribute("data-gender") || "";
+        setAttendanceGender(opt.getAttribute("data-gender") || "");
         document.getElementById("l_wage").value =
           opt.getAttribute("data-wage") || 0;
         calcPay();
@@ -2221,12 +3349,38 @@
           calcMatAmt();
         }
       }
+      function setAttendanceGender(value = "") {
+        document.getElementById("l_gender").value = value;
+        document.querySelectorAll("#genderBtns .attendance-pill-btn").forEach((btn) => {
+          btn.classList.toggle("gender-active", btn.dataset.value === value && !!value);
+        });
+      }
+      function setAttendanceStatus(value = "Present") {
+        const input = document.getElementById("l_status");
+        if (input) input.value = value;
+        document.querySelectorAll("#statusBtns .attendance-pill-btn").forEach((btn) => {
+          btn.classList.remove("active", "halfday-active", "absent-active", "leave-active");
+          if (btn.dataset.value === value) {
+            if (value === "Present") btn.classList.add("active");
+            else if (value === "Half Day") btn.classList.add("halfday-active");
+            else if (value === "Absent") btn.classList.add("absent-active");
+            else if (value === "Leave") btn.classList.add("leave-active");
+          }
+        });
+        calcPay();
+      }
       function calcPay() {
         const wage = parseFloat(document.getElementById("l_wage").value) || 0;
-        const st = document.getElementById("l_status").value;
-        document.getElementById("l_pay").value = (
-          st === "Present" ? wage : st === "Half Day" ? wage * 0.5 : 0
-        ).toFixed(2);
+        const st = document.getElementById("l_status").value || "Present";
+        const hrs = parseFloat(document.getElementById("l_hours").value) || 0;
+        let pay = 0;
+        if (st === "Present") pay = wage;
+        else if (st === "Half Day") pay = wage / 2;
+        else if (st === "Absent" || st === "Leave") pay = 0;
+        if (hrs > 0 && st === "Present") pay = (wage / 8) * hrs;
+        document.getElementById("l_pay").value = Math.round(pay * 100) / 100;
+        const preview = document.getElementById("attendancePayPreview");
+        if (preview) preview.textContent = fmtF(pay);
       }
       function calcMatAmt() {
         const q = parseFloat(document.getElementById("me_qty").value) || 0;
@@ -2293,16 +3447,18 @@
         }
         document.getElementById("l_site").value = "";
         document.getElementById("l_worker").innerHTML =
-          '<option value="">-- Select Worker --</option>';
+          '<option value="">Select worker</option>';
         document.getElementById("l_des").value = "";
-        document.getElementById("l_gender").value = "";
-        document.getElementById("l_wage").value = "";
-        document.getElementById("l_hours").value = "";
-        document.getElementById("l_pay").value = "";
+        document.getElementById("l_des").value = "";
+        setAttendanceGender("");
+        document.getElementById("l_wage").value = 0;
+        document.getElementById("l_hours").value = 8;
+        document.getElementById("l_pay").value = 0;
         document.getElementById("l_remarks").value = "";
-        document.getElementById("l_status").value = "Present";
         document.getElementById("labModalTitle").textContent = "Add Attendance";
         populateAllDropdowns();
+        setAttendanceStatus("Present");
+        calcPay();
         openModal("labModal");
       }
 
@@ -2315,13 +3471,32 @@
           toast("Site name is required", false);
           return;
         }
+        const supEl = document.getElementById("s_sup");
+        const engEl = document.getElementById("s_engineers");
+        // Sanitize: ensure empty string becomes null for UUID fields
+        const supervisorId =
+          supEl.value && supEl.value.trim() !== "" ? supEl.value.trim() : null;
+        const supervisorName =
+          supervisorId && supEl.selectedIndex >= 0
+            ? (supEl.options[supEl.selectedIndex]?.text || "")
+                .replace("-- Select Supervisor --", "")
+                .trim()
+            : "";
+        // Filter out empty strings from engineer IDs
+        const engineerIds = engEl
+          ? Array.from(engEl.selectedOptions)
+              .map((o) => o.value)
+              .filter((v) => v && v.trim() !== "")
+          : [];
         const obj = {
           name,
           city: document.getElementById("s_city").value,
           addr: document.getElementById("s_addr").value,
           start_date: document.getElementById("s_date").value || null,
           status: document.getElementById("s_status").value,
-          supervisor: document.getElementById("s_sup").value,
+          supervisor: supervisorName,
+          supervisorid: supervisorId,
+          engineerids: engineerIds,
           phone: document.getElementById("s_phone").value,
         };
         try {
@@ -2348,14 +3523,55 @@
         document.getElementById("s_addr").value = s.addr || "";
         document.getElementById("s_date").value = s.start_date || "";
         document.getElementById("s_status").value = s.status || "Active";
-        document.getElementById("s_sup").value = s.supervisor || "";
         document.getElementById("s_phone").value = s.phone || "";
+        // Load user dropdowns first, then pre-select saved values
+        await populateSiteUserDropdowns();
+        const supEl = document.getElementById("s_sup");
+        if (supEl && s.supervisorid) {
+          supEl.value = s.supervisorid;
+          // fallback: if uuid not found in dropdown, try matching by name
+          if (!supEl.value && s.supervisor) {
+            Array.from(supEl.options).forEach((opt) => {
+              if (
+                opt.text.trim().toLowerCase() ===
+                s.supervisor.trim().toLowerCase()
+              )
+                opt.selected = true;
+            });
+          }
+        }
+        const engEl = document.getElementById("s_engineers");
+        if (engEl && s.engineerids && Array.isArray(s.engineerids)) {
+          Array.from(engEl.options).forEach((opt) => {
+            opt.selected = s.engineerids.includes(opt.value);
+          });
+        }
         openModal("siteModal");
       }
       async function deleteSite(id) {
         if (!guard("canDeleteSite", "Admin only")) return;
-        if (!confirm("Delete this site?")) return;
+        if (
+          !confirm(
+            "Delete this site?\nAll linked workers, attendance, material entries and cashbook records will be unlinked.",
+          )
+        )
+          return;
         try {
+          // Unlink all FK-referencing tables before deleting site
+          const tables = [
+            "workers",
+            "attendance",
+            "material_entries",
+            "cashbook",
+          ];
+          for (const tbl of tables) {
+            const { error } = await sb
+              .from(tbl)
+              .update({ site_id: null })
+              .eq("site_id", id);
+            if (error) throw error;
+          }
+          // Now safe to delete site
           await dbDelete("sites", id);
           populateAllDropdowns();
           renderSites();
@@ -2562,12 +3778,13 @@
         await populateWorkerDropdown();
         document.getElementById("l_worker").value = e.worker_id;
         document.getElementById("l_des").value = e.designation || "";
-        document.getElementById("l_gender").value = e.gender || "";
+        setAttendanceGender(e.gender || "");
         document.getElementById("l_wage").value = e.wage || 0;
-        document.getElementById("l_status").value = e.status || "Present";
         document.getElementById("l_hours").value = e.hours || "";
         document.getElementById("l_pay").value = e.pay || 0;
         document.getElementById("l_remarks").value = e.remarks || "";
+        setAttendanceStatus(e.status || "Present");
+        calcPay();
 
         // Lock date for non-admin
         const dateInput = document.getElementById("l_date");
@@ -2751,6 +3968,14 @@
       // ════════════ RENDER OVERVIEW ════════════
       async function renderOverview() {
         const gSite = document.getElementById("gSite").value;
+        const gSiteName = gSite
+          ? (
+              document.getElementById("gSite")?.options[
+                document.getElementById("gSite")?.selectedIndex
+              ]?.text || ""
+            ).trim()
+          : "";
+
         const [sites, attend, mats, cash] = await Promise.all([
           dbGet("sites"),
           dbGet("attendance"),
@@ -2758,69 +3983,106 @@
           dbGet("cashbook"),
         ]);
         const today = getToday();
-        document.getElementById("ov-sites").textContent = sites.filter(
+
+        // Helper: does a record belong to selected site?
+        function matchSite(rec) {
+          if (!gSite) return true;
+          return (
+            rec.site_id === gSite ||
+            (rec.site_name && rec.site_name.trim() === gSiteName)
+          );
+        }
+
+        // Filter all data by selected site upfront
+        const filtSites = gSite
+          ? sites.filter((s) => s.id === gSite || s.name === gSiteName)
+          : sites;
+        const filtAttend = attend.filter(matchSite);
+        const filtMats = mats.filter(matchSite);
+        const filtCash = cash.filter(matchSite);
+
+        // ── KPIs ──
+        document.getElementById("ov-sites").textContent = filtSites.filter(
           (s) => s.status === "Active",
         ).length;
-        const todayLab = attend.filter(
-          (a) => a.date === today && (!gSite || a.site_id === gSite),
+
+        const todayLab = filtAttend.filter((a) => a.date === today);
+        document.getElementById("ov-labour").textContent = fmt(
+          todayLab.reduce((s, a) => s + (a.pay || 0), 0),
         );
-        const labCost = todayLab.reduce((s, a) => s + (a.pay || 0), 0);
-        document.getElementById("ov-labour").textContent = fmt(labCost);
         document.getElementById("ov-present").textContent =
           todayLab.filter((a) => a.status === "Present").length +
           " present today";
-        const matIn = mats
-          .filter((m) => m.type === "In" && (!gSite || m.site_id === gSite))
-          .reduce((s, m) => s + (m.amount || 0), 0);
-        document.getElementById("ov-mat").textContent = fmt(matIn);
-        const cashD = cash.filter((c) => !gSite || c.site_id === gSite);
-        const bal =
-          cashD
-            .filter((c) => c.type === "Money Sent")
-            .reduce((s, c) => s + (c.amount || 0), 0) -
-          cashD
-            .filter((c) => c.type === "Expense")
-            .reduce((s, c) => s + (c.amount || 0), 0);
+
+        document.getElementById("ov-mat").textContent = fmt(
+          filtMats
+            .filter((m) => m.type === "In")
+            .reduce((s, m) => s + (m.amount || 0), 0),
+        );
+
+        const sent = filtCash
+          .filter((c) => c.type === "Money Sent")
+          .reduce((s, c) => s + (c.amount || 0), 0);
+        const exp = filtCash
+          .filter((c) => c.type === "Expense")
+          .reduce((s, c) => s + (c.amount || 0), 0);
+        const bal = sent - exp;
         const bEl = document.getElementById("ov-cash");
         bEl.textContent = fmt(Math.abs(bal));
         bEl.style.color = bal >= 0 ? "var(--success)" : "var(--danger)";
 
-        // Site Summary Table
+        // ── Site Summary Table (filtered) ──
+        const sc = {
+          Active: "bg-green",
+          "On Hold": "bg-orange",
+          Completed: "bg-gray",
+        };
+        // ── Site Summary Cards ──
         document.getElementById("ovTable").innerHTML =
-          sites
-            .map((s) => {
+          filtSites.length === 0
+            ? '<div style="text-align:center;color:var(--muted);padding:24px 0">No sites yet.</div>'
+            : filtSites.map((s) => {
               const sL = attend
-                .filter((a) => a.site_id === s.id)
+                .filter((a) => a.site_id === s.id || a.site_name === s.name)
                 .reduce((t, a) => t + (a.pay || 0), 0);
               const sM = mats
-                .filter((m) => m.site_id === s.id && m.type === "In")
+                .filter((m) => (m.site_id === s.id || m.site_name === s.name) && m.type === "In")
                 .reduce((t, m) => t + (m.amount || 0), 0);
               const sSent = cash
-                .filter((c) => c.site_id === s.id && c.type === "Money Sent")
+                .filter((c) => (c.site_id === s.id || c.site_name === s.name) && c.type === "Money Sent")
                 .reduce((t, c) => t + (c.amount || 0), 0);
               const sExp = cash
-                .filter((c) => c.site_id === s.id && c.type === "Expense")
+                .filter((c) => (c.site_id === s.id || c.site_name === s.name) && c.type === "Expense")
                 .reduce((t, c) => t + (c.amount || 0), 0);
               const sBal = sSent - sExp;
-              const sc = {
-                Active: "bg-green",
-                "On Hold": "bg-orange",
-                Completed: "bg-gray",
-              };
-              return `<tr><td><strong>${s.name}</strong></td><td>${s.supervisor || "–"}</td><td>${fmt(sL)}</td><td>${fmt(sM)}</td><td>${fmt(sSent)}</td><td>${fmt(sExp)}</td><td style="color:${sBal >= 0 ? "var(--success)" : "var(--danger)"}">${fmt(sBal)}</td><td><span class="badge ${sc[s.status] || "bg-gray"}">${s.status}</span></td></tr>`;
-            })
-            .join("") ||
-          '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No sites yet.</td></tr>';
+              const balCls = sBal >= 0 ? 'sc-val-pos' : 'sc-val-neg';
+              const stBadge = sc[s.status] || 'bg-gray';
+              return `<div class="site-card">
+                <div class="site-card-head">
+                  <div class="site-card-name">${s.name}</div>
+                  <span class="badge ${stBadge}">${s.status}</span>
+                </div>
+                <div class="site-card-sup">${s.supervisor || 'SUPER'}</div>
+                <div class="site-card-grid">
+                  <div class="sc-stat"><div class="sc-lbl">Labour</div><div class="sc-val">${fmt(sL)}</div></div>
+                  <div class="sc-stat"><div class="sc-lbl">Material</div><div class="sc-val">${fmt(sM)}</div></div>
+                  <div class="sc-stat"><div class="sc-lbl">Balance</div><div class="sc-val ${balCls}">${fmt(sBal)}</div></div>
+                </div>
+                <div class="site-card-row2">
+                  <div class="sc-stat"><div class="sc-lbl">Cash Sent</div><div class="sc-val">${fmt(sSent)}</div></div>
+                  <div class="sc-stat"><div class="sc-lbl">Expenses</div><div class="sc-val sc-val-neg">${fmt(sExp)}</div></div>
+                </div>
+              </div>`;
+            }).join("");
 
-        // Trend Chart (last 7 days)
+        // ── Trend Chart — last 7 days (filtered) ──
         const days = [];
         for (let i = 6; i >= 0; i--) {
           const d = new Date(new Date().getTime() - i * 86400000);
           days.push(d.toISOString().split("T")[0]);
         }
-        const dLabels = days.map((d) => d.slice(5));
         const dData = days.map((d) =>
-          attend
+          filtAttend
             .filter((a) => a.date === d)
             .reduce((s, a) => s + (a.pay || 0), 0),
         );
@@ -2830,7 +4092,7 @@
           {
             type: "line",
             data: {
-              labels: dLabels,
+              labels: days.map((d) => d.slice(5)),
               datasets: [
                 {
                   label: "Labour Cost",
@@ -2851,11 +4113,11 @@
           },
         );
 
-        // Site Bar Chart
-        const siteCosts = sites.map((s) => ({
+        // ── Site Bar Chart (filtered sites) ──
+        const siteCosts = filtSites.map((s) => ({
           name: s.name,
           cost: attend
-            .filter((a) => a.site_id === s.id)
+            .filter((a) => a.site_id === s.id || a.site_name === s.name)
             .reduce((t, a) => t + (a.pay || 0), 0),
         }));
         if (siteChart2) siteChart2.destroy();
@@ -2891,8 +4153,22 @@
           search = document.getElementById("labSearch").value.toLowerCase();
         let E = await dbGet("attendance");
         if (date) E = E.filter((e) => e.date === date);
-        if (site) E = E.filter((e) => e.site_id === site);
-        if (des) E = E.filter((e) => e.designation === des);
+        if (site) {
+          const _sName = (
+            document.getElementById("labSite")?.options[
+              document.getElementById("labSite")?.selectedIndex
+            ]?.text || ""
+          ).trim();
+          E = E.filter(
+            (e) =>
+              e.site_id === site ||
+              (e.site_name && e.site_name.trim() === _sName),
+          );
+        }
+        if (des)
+          E = E.filter(
+            (e) => (e.designation || "").toLowerCase() === des.toLowerCase(),
+          );
         if (search)
           E = E.filter((e) =>
             (e.worker_name || "").toLowerCase().includes(search),
@@ -2984,8 +4260,22 @@
           date = document.getElementById("matDate").value;
         const search = document.getElementById("matSearch").value.toLowerCase();
         let E = await dbGet("material_entries");
-        if (site) E = E.filter((e) => e.site_id === site);
-        if (name) E = E.filter((e) => e.material_name === name);
+        if (site) {
+          const _sName = (
+            document.getElementById("matSite")?.options[
+              document.getElementById("matSite")?.selectedIndex
+            ]?.text || ""
+          ).trim();
+          E = E.filter(
+            (e) =>
+              e.site_id === site ||
+              (e.site_name && e.site_name.trim() === _sName),
+          );
+        }
+        if (name)
+          E = E.filter(
+            (e) => (e.material_name || "").toLowerCase() === name.toLowerCase(),
+          );
         if (type) E = E.filter((e) => e.type === type);
         if (date) E = E.filter((e) => e.date === date);
         if (search)
@@ -3024,8 +4314,19 @@
           ).join("") ||
           '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px">No entries.</td></tr>';
 
-        // Stock summary
-        const allE = await dbGet("material_entries");
+        // Stock summary — filtered by selected site
+        let allE = await dbGet("material_entries");
+        if (site) {
+          const _sn = (
+            document.getElementById("matSite")?.options[
+              document.getElementById("matSite")?.selectedIndex
+            ]?.text || ""
+          ).trim();
+          allE = allE.filter(
+            (e) =>
+              e.site_id === site || (e.site_name && e.site_name.trim() === _sn),
+          );
+        }
         const mMast = await dbGet("materials_master");
         document.getElementById("stockList").innerHTML =
           mMast
@@ -3053,7 +4354,18 @@
         const to = document.getElementById("cashTo").value,
           search = document.getElementById("cashSearch").value.toLowerCase();
         let E = await dbGet("cashbook");
-        if (site) E = E.filter((e) => e.site_id === site);
+        if (site) {
+          const _sName = (
+            document.getElementById("cashSite")?.options[
+              document.getElementById("cashSite")?.selectedIndex
+            ]?.text || ""
+          ).trim();
+          E = E.filter(
+            (e) =>
+              e.site_id === site ||
+              (e.site_name && e.site_name.trim() === _sName),
+          );
+        }
         if (type) E = E.filter((e) => e.type === type);
         if (head) E = E.filter((e) => e.head === head);
         if (from) E = E.filter((e) => e.date >= from);
@@ -3138,7 +4450,9 @@
           S.map(
             (s, i) => `<tr>
     <td>${String(i + 1).padStart(3, "0")}</td><td><strong>${s.name}</strong></td><td>${s.addr || ""}</td>
-    <td>${s.start_date || ""}</td><td>${s.supervisor || ""}</td><td>${s.phone || ""}</td>
+    <td>${s.start_date || ""}</td><td>${s.supervisor || "–"}</td>
+    <td style="font-size:11px;color:var(--muted)">${Array.isArray(s.engineerids) && s.engineerids.length > 0 ? s.engineerids.length + " assigned" : "–"}</td>
+    <td>${s.phone || ""}</td>
     <td><span class="badge ${sc[s.status] || "bg-gray"}">${s.status}</span></td>
     <td style="white-space:nowrap">${canEdit ? `<button class="btn-sm-edit" onclick="editSite('${s.id}')">Edit</button>` : ""}${canDel ? `<button class="btn-sm-danger" onclick="deleteSite('${s.id}')">Delete</button>` : ""}</td>
   </tr>`,
@@ -3196,36 +4510,55 @@
       }
 
       // ── NAVIGATION ──
+      // ── GLOBAL SITE SYNC ──
+      function syncGlobalSite() {
+        const val = document.getElementById("gSite").value;
+        // Push to all page-level site dropdowns
+        ["labSite", "matSite", "cashSite", "wfSite"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        });
+        renderOverview();
+        renderLabour();
+        renderMaterials();
+        renderCash();
+        renderWorkers();
+      }
+
       function showPage(id, el) {
-        document
-          .querySelectorAll(".page")
-          .forEach((p) => p.classList.remove("active"));
-        document
-          .querySelectorAll(".nav-item")
-          .forEach((n) => n.classList.remove("active"));
+        if (window.innerWidth <= 900) closeSidebar();
+        document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+        document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
         document.getElementById("page-" + id).classList.add("active");
-        el.classList.add("active");
-        const titles = {
-          overview: "Overview",
-          labour: "Labour",
-          materials: "Materials",
-          cashbook: "Cashbook",
-          masters: "Masters",
-        };
+        if (el) el.classList.add("active");
+        const titles = { overview: "Overview", labour: "Labour", materials: "Materials", cashbook: "Cashbook", masters: "Masters" };
         document.getElementById("pgT").textContent = titles[id];
-        document.getElementById("pgB").textContent =
-          "Dashboard › " + titles[id];
+        document.getElementById("pgB").textContent = "Dashboard › " + titles[id];
         document.getElementById("sidebar").classList.remove("open");
+        // sync bottom nav
+        document.querySelectorAll(".bnav-item").forEach((b) => b.classList.remove("active"));
+        const bnEl = document.getElementById("bn-" + id);
+        if (bnEl) bnEl.classList.add("active");
         populateAllDropdowns();
         if (id === "overview") renderOverview();
         else if (id === "labour") renderLabour();
         else if (id === "materials") renderMaterials();
         else if (id === "cashbook") renderCash();
-        else if (id === "masters") {
-          renderSites();
-          renderWorkers();
-          renderMatMaster();
-        }
+        else if (id === "masters") { renderSites(); renderWorkers(); renderMatMaster(); }
+        // resize charts after page switch
+        setTimeout(() => { if (trendChart2) trendChart2.resize(); if (siteChart2) siteChart2.resize(); if (labChart2) labChart2.resize(); }, 50);
+      }
+      // Bottom nav handler (no sidebar nav-item to highlight)
+      function showPageBnav(id) {
+        const navMap = { overview: "navOverview", labour: "navLabour", materials: "navMaterials", cashbook: "navCashbook" };
+        const navEl = navMap[id] ? document.getElementById(navMap[id]) : null;
+        showPage(id, navEl);
+      }
+      // Password eye toggle
+      function togglePw(inputId, btn) {
+        const el = document.getElementById(inputId);
+        el.type = el.type === "password" ? "text" : "password";
+        btn.textContent = el.type === "password" ? "👁" : "🙈";
       }
       function showMaster(id, el) {
         ["sites", "workers", "materials"].forEach((m) => {
@@ -3268,9 +4601,22 @@
         );
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "constructco-" + getToday() + ".json";
+        a.download = "RamaConstruction-" + getToday() + ".json";
         a.click();
         toast("Data exported!");
+      }
+
+      // ── SIDEBAR TOGGLE (mobile) ──
+      function toggleSidebar() {
+        const sb = document.getElementById("sidebar");
+        const ov = document.getElementById("sidebarOverlay");
+        const isOpen = sb.classList.toggle("open");
+        if (ov) ov.classList.toggle("show", isOpen);
+      }
+      function closeSidebar() {
+        document.getElementById("sidebar").classList.remove("open");
+        const ov = document.getElementById("sidebarOverlay");
+        if (ov) ov.classList.remove("show");
       }
 
       // ── BOOT ──
@@ -3284,6 +4630,435 @@
           document.getElementById("appWrapper").style.display = "none";
         }
       };
-    </script>
+    
+// === MOBILE UI REFRESH PATCH ===
+      (function () {
+        const isPhoneView = () => window.innerWidth <= 600;
+        const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+        const selectedText = (id) => {
+          const el = document.getElementById(id);
+          return (el?.options?.[el.selectedIndex]?.text || "").trim();
+        };
+        const fmtDate = (v) => v || "";
+        const padCode = (n) => `# ${String(n).padStart(3, '0')}`;
+        const ensureMobileBox = (parent, id, beforeEl) => {
+          let el = document.getElementById(id);
+          if (!el) {
+            el = document.createElement('div');
+            el.id = id;
+            el.className = 'mobile-alt-view';
+            if (beforeEl) parent.insertBefore(el, beforeEl); else parent.appendChild(el);
+          }
+          return el;
+        };
+        const initials = (name) => {
+          const parts = String(name || '?').trim().split(/\s+/).filter(Boolean);
+          return (parts[0]?.[0] || '?').toUpperCase();
+        };
+        const statusBadgeClass = (status) => ({ Present: 'bg-green', 'Half Day': 'bg-orange', Absent: 'bg-red', Leave: 'bg-gray', Active: 'bg-green', Inactive: 'bg-gray', Completed: 'bg-blue', 'On Hold': 'bg-orange' }[status] || 'bg-gray');
+        const siteMatch = (entry, siteId, selectId) => {
+          if (!siteId) return true;
+          const sName = selectedText(selectId);
+          return entry.site_id === siteId || (entry.site_name && entry.site_name.trim() === sName) || (entry.sitename && entry.sitename.trim() === sName);
+        };
+        const actionBtns = (editJs, deleteJs, canEdit, canDel) => {
+          const out = [];
+          if (canEdit) out.push(`<button class="mobile-action-btn edit" onclick="${editJs}">✏ Edit</button>`);
+          if (canDel) out.push(`<button class="mobile-action-btn delete" onclick="${deleteJs}">🗑 Delete</button>`);
+          return out.length ? `<div class="mobile-actions">${out.join('')}</div>` : '';
+        };
+
+        async function renderLabourMobileUI() {
+          const page = document.getElementById('page-labour');
+          if (!page) return;
+          const anchor = page.querySelector('.fbar');
+          const beforeEl = page.querySelector('.g3');
+          const box = ensureMobileBox(page, 'labourMobileView', beforeEl);
+          if (!isPhoneView()) { box.innerHTML = ''; return; }
+          const date = document.getElementById('labDate')?.value || '';
+          const site = document.getElementById('labSite')?.value || '';
+          const des = document.getElementById('labDes')?.value || '';
+          const search = (document.getElementById('labSearch')?.value || '').toLowerCase();
+          let E = await dbGet('attendance');
+          if (date) E = E.filter(e => e.date === date);
+          if (site) E = E.filter(e => siteMatch(e, site, 'labSite'));
+          if (des) E = E.filter(e => (e.designation || '').toLowerCase() === des.toLowerCase());
+          if (search) E = E.filter(e => (e.worker_name || '').toLowerCase().includes(search));
+          E.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+          const total = E.reduce((s, e) => s + (+e.pay || 0), 0);
+          const present = E.filter(e => e.status === 'Present').length;
+          const halfDay = E.filter(e => e.status === 'Half Day').length;
+          const absent = E.filter(e => e.status === 'Absent').length;
+          const leave = E.filter(e => e.status === 'Leave').length;
+          const canEditAttendance = can('canEditAttendance');
+          const canDeleteAttendance = can('canDeleteAttendance');
+          box.innerHTML = `
+            <div class="mobile-summary-card">
+              <div class="mobile-summary-title">Total Pay (Filtered)</div>
+              <div class="mobile-summary-value">${fmtF(total)}</div>
+              <div class="mobile-summary-grid">
+                <div class="mobile-summary-row"><span>Present</span><strong style="color:#22c55e">${present}</strong></div>
+                <div class="mobile-summary-row"><span>Half Day</span><strong style="color:#facc15">${halfDay}</strong></div>
+                <div class="mobile-summary-row"><span>Absent</span><strong style="color:#f43f5e">${absent}</strong></div>
+                <div class="mobile-summary-row"><span>Leave</span><strong>${leave}</strong></div>
+              </div>
+            </div>
+            <div class="mobile-white-card">
+              <div class="mobile-section-head">
+                <div class="mobile-section-title">👷 Daily Attendance</div>
+                <div class="mobile-count-pill">${present} Present</div>
+              </div>
+              <div class="mobile-list">
+                ${E.length ? E.map(e => `
+                  <div class="mobile-entry">
+                    <div class="mobile-entry-top">
+                      <div>
+                        <div class="mobile-entry-name">${esc(e.worker_name || '')}</div>
+                        <div class="mobile-entry-sub">${esc(e.designation || '')}</div>
+                      </div>
+                      <span class="badge ${statusBadgeClass(e.status)}">${esc(e.status || '')}</span>
+                    </div>
+                    <div class="mobile-meta-grid">
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Gender</div><div class="mobile-meta-value">${esc(e.gender || '–')}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Site</div><div class="mobile-meta-value">${esc(e.site_name || '–')}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Hrs</div><div class="mobile-meta-value">${esc(e.hours ?? '–')}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Pay</div><div class="mobile-meta-value" style="color:#16a34a">${fmtF(e.pay)}</div></div>
+                    </div>
+                    ${e.remarks ? `<div class="mobile-remarks">Remarks: ${esc(e.remarks)}</div>` : ''}
+                    ${actionBtns(`editAttendance('${e.id}')`, `deleteAttendance('${e.id}')`, canEditAttendance, canDeleteAttendance)}
+                  </div>`).join('') : `<div class="mobile-empty">No records. Click &quot;+ Add Attendance&quot;.</div>`}
+              </div>
+            </div>`;
+        }
+
+        async function renderMaterialsMobileUI() {
+          const page = document.getElementById('page-materials');
+          if (!page) return;
+          const beforeEl = page.querySelector('.g3');
+          const box = ensureMobileBox(page, 'materialsMobileView', beforeEl);
+          if (!isPhoneView()) { box.innerHTML = ''; return; }
+          const site = document.getElementById('matSite')?.value || '';
+          const name = document.getElementById('matName')?.value || '';
+          const type = document.getElementById('matType')?.value || '';
+          const date = document.getElementById('matDate')?.value || '';
+          const search = (document.getElementById('matSearch')?.value || '').toLowerCase();
+          let E = await dbGet('material_entries');
+          if (site) E = E.filter(e => siteMatch(e, site, 'matSite'));
+          if (name) E = E.filter(e => (e.material_name || '').toLowerCase() === name.toLowerCase());
+          if (type) E = E.filter(e => e.type === type);
+          if (date) E = E.filter(e => e.date === date);
+          if (search) E = E.filter(e => (e.material_name || '').toLowerCase().includes(search) || (e.party || '').toLowerCase().includes(search));
+          E.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+          const inVal = E.filter(e => e.type === 'In').reduce((s, e) => s + (+e.amount || 0), 0);
+          const outVal = E.filter(e => e.type === 'Out').reduce((s, e) => s + (+e.amount || 0), 0);
+          const inCnt = E.filter(e => e.type === 'In').length;
+          const outCnt = E.filter(e => e.type === 'Out').length;
+          let allE = await dbGet('material_entries');
+          if (site) allE = allE.filter(e => siteMatch(e, site, 'matSite'));
+          const mMast = await dbGet('materials_master');
+          const canEditMat = can('canEditMatEntry');
+          const canDeleteMat = can('canDeleteMatEntry');
+          const stockHtml = mMast.map(m => {
+            const inQ = allE.filter(e => e.material_id === m.id && e.type === 'In').reduce((s, e) => s + (+e.qty || 0), 0);
+            const outQ = allE.filter(e => e.material_id === m.id && e.type === 'Out').reduce((s, e) => s + (+e.qty || 0), 0);
+            const net = inQ - outQ;
+            if (!inQ && !outQ) return '';
+            const pct = inQ > 0 ? Math.max(8, Math.min(100, Math.round(Math.abs(net) / inQ * 100))) : 8;
+            const negative = net < 0;
+            return `
+              <div class="mobile-stock-row">
+                <div class="mobile-stock-line"><strong>${esc(m.name || '')}</strong><span class="mobile-stock-qty ${negative ? 'negative' : ''}">${net} ${esc(m.unit || '')}</span></div>
+                <div class="mobile-stock-bar"><div class="mobile-stock-fill ${negative ? 'negative' : ''}" style="width:${pct}%"></div></div>
+              </div>`;
+          }).join('') || '<div class="mobile-empty">No materials.</div>';
+          box.innerHTML = `
+            <div class="mobile-summary-card">
+              <div class="mobile-summary-title">IN Value</div>
+              <div class="mobile-summary-value">${fmtF(inVal)}</div>
+              <div class="mobile-summary-row"><span>OUT Value</span><strong style="color:#f87171">${fmtF(outVal)}</strong></div>
+              <div class="mobile-summary-row"><span>IN Entries</span><strong style="color:#22c55e">${inCnt}</strong></div>
+              <div class="mobile-summary-row"><span>OUT Entries</span><strong style="color:#f59e0b">${outCnt}</strong></div>
+            </div>
+            <div class="mobile-white-card">
+              <div class="mobile-section-title">📦 Stock</div>
+              <div style="margin-top:12px">${stockHtml}</div>
+            </div>
+            <div class="mobile-white-card">
+              <div class="mobile-section-title">🧱 Material Ledger</div>
+              <div class="mobile-list" style="margin-top:12px">
+                ${E.length ? E.map(e => `
+                  <div class="mobile-entry">
+                    <div class="mobile-entry-top">
+                      <div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px"><span class="badge ${e.type === 'In' ? 'bg-green' : 'bg-orange'}">${esc(e.type || '')}</span><div class="mobile-entry-name">${esc(e.material_name || '')}</div></div>
+                        <div class="mobile-entry-sub">${esc(e.site_name || '')}</div>
+                      </div>
+                      <div class="mobile-amount ${e.type === 'In' ? 'pos' : 'neg'}">${e.type === 'In' ? '+' : '-'}${fmtF(e.amount)}</div>
+                    </div>
+                    <div class="mobile-meta-grid">
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Date</div><div class="mobile-meta-value">${fmtDate(e.date)}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Qty</div><div class="mobile-meta-value">${esc(e.qty || 0)} ${esc(e.unit || '')}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Rate</div><div class="mobile-meta-value">${fmtF(e.rate)}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Party</div><div class="mobile-meta-value">${esc(e.party || '–')}</div></div>
+                    </div>
+                    ${actionBtns(`editMatEntry('${e.id}')`, `deleteMatEntry('${e.id}')`, canEditMat, canDeleteMat)}
+                  </div>`).join('') : '<div class="mobile-empty">No entries.</div>'}
+              </div>
+            </div>`;
+        }
+
+        async function renderCashMobileUI() {
+          const page = document.getElementById('page-cashbook');
+          if (!page) return;
+          const beforeEl = page.querySelector('.g5');
+          const box = ensureMobileBox(page, 'cashbookMobileView', beforeEl);
+          if (!isPhoneView()) { box.innerHTML = ''; return; }
+          const site = document.getElementById('cashSite')?.value || '';
+          const type = document.getElementById('cashType')?.value || '';
+          const head = document.getElementById('cashHead')?.value || '';
+          const from = document.getElementById('cashFrom')?.value || '';
+          const to = document.getElementById('cashTo')?.value || '';
+          const search = (document.getElementById('cashSearch')?.value || '').toLowerCase();
+          let E = await dbGet('cashbook');
+          if (site) E = E.filter(e => siteMatch(e, site, 'cashSite'));
+          if (type) E = E.filter(e => e.type === type);
+          if (head) E = E.filter(e => e.head === head);
+          if (from) E = E.filter(e => String(e.date || '') >= from);
+          if (to) E = E.filter(e => String(e.date || '') <= to);
+          if (search) E = E.filter(e => [e.head, e.party, e.notes, e.site_name, e.mode].some(v => (v || '').toLowerCase().includes(search)));
+          E.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+          const totalSent = E.filter(e => e.type === 'Money Sent').reduce((s, e) => s + (+e.amount || 0), 0);
+          const totalExp = E.filter(e => e.type === 'Expense').reduce((s, e) => s + (+e.amount || 0), 0);
+          const balance = totalSent - totalExp;
+          const labourPaid = E.filter(e => e.head === 'Labour Payment').reduce((s, e) => s + (+e.amount || 0), 0);
+          const materialPurchased = E.filter(e => e.head === 'Material Purchase').reduce((s, e) => s + (+e.amount || 0), 0);
+          const canEditCash = can('canEditCash');
+          const canDeleteCash = can('canDeleteCash');
+          const grouped = {};
+          E.forEach(e => {
+            const k = e.site_name || 'Unknown Site';
+            grouped[k] ||= { sent: 0, exp: 0 };
+            if (e.type === 'Money Sent') grouped[k].sent += (+e.amount || 0); else grouped[k].exp += (+e.amount || 0);
+          });
+          box.innerHTML = `
+            <div class="mobile-split-grid">
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#22c55e">↗</div><div class="mobile-mini-value" style="color:#22c55e">${fmtF(totalSent)}</div><div class="mobile-mini-label">Total Sent</div></div>
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#ef4444">↘</div><div class="mobile-mini-value" style="color:#ef4444">${fmtF(totalExp)}</div><div class="mobile-mini-label">Total Expenses</div></div>
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#3b82f6">₹</div><div class="mobile-mini-value" style="color:#3b82f6">${fmtF(balance)}</div><div class="mobile-mini-label">Balance</div></div>
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#eab308">◌</div><div class="mobile-mini-value" style="color:#eab308">${fmtF(labourPaid)}</div><div class="mobile-mini-label">Labour Paid</div></div>
+            </div>
+            <div class="mobile-mini-stat" style="margin-bottom:14px"><div class="mobile-mini-icon" style="color:#f97316">📦</div><div class="mobile-mini-value" style="color:#f97316">${fmtF(materialPurchased)}</div><div class="mobile-mini-label">Material Purchased</div></div>
+            <div class="mobile-white-card">
+              <div class="mobile-section-title">💰 Transactions</div>
+              <div class="mobile-list" style="margin-top:12px">
+                ${E.length ? E.map(e => `
+                  <div class="mobile-entry">
+                    <div class="mobile-entry-top">
+                      <div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px"><span class="badge ${e.type === 'Money Sent' ? 'bg-green' : 'bg-red'}">${e.type === 'Money Sent' ? 'Sent' : 'Exp'}</span><div class="mobile-entry-name">${esc(e.head || '')}</div></div>
+                        <div class="mobile-txn-meta">${fmtDate(e.date)} &nbsp;•&nbsp; ${esc(e.site_name || '')} &nbsp;•&nbsp; ${esc(e.mode || '')}${e.party ? ` &nbsp;•&nbsp; ${esc(e.party)}` : ''}${e.notes ? ` &nbsp;•&nbsp; ${esc(e.notes)}` : ''}</div>
+                      </div>
+                      <div class="mobile-amount ${e.type === 'Money Sent' ? 'pos' : 'neg'}">${e.type === 'Money Sent' ? '+' : ''}${fmtF(e.amount)}</div>
+                    </div>
+                    ${actionBtns(`editCash('${e.id}')`, `deleteCash('${e.id}')`, canEditCash, canDeleteCash)}
+                  </div>`).join('') : '<div class="mobile-empty">No entries. Click &quot;+ Add Entry&quot;.</div>'}
+              </div>
+            </div>
+            <div class="mobile-white-card">
+              <div class="mobile-section-title">🏗 Site Balance</div>
+              <div class="mobile-list" style="margin-top:12px">
+                ${Object.keys(grouped).length ? Object.entries(grouped).map(([name, v]) => `
+                  <div class="mobile-entry">
+                    <div class="mobile-entry-top" style="margin-bottom:0">
+                      <div class="mobile-entry-name">${esc(name)}</div>
+                      <div class="mobile-amount ${v.sent - v.exp >= 0 ? 'pos' : 'neg'}">${fmtF(v.sent - v.exp)}</div>
+                    </div>
+                    <div class="mobile-meta-grid" style="margin-top:10px">
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Sent</div><div class="mobile-meta-value" style="color:#f97316">${fmtF(v.sent)}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Expenses</div><div class="mobile-meta-value" style="color:#ef4444">${fmtF(v.exp)}</div></div>
+                    </div>
+                  </div>`).join('') : '<div class="mobile-empty">No site balance data.</div>'}
+              </div>
+            </div>`;
+        }
+
+        async function renderSitesMobileUI() {
+          const wrap = document.getElementById('ms-sites');
+          if (!wrap) return;
+          const beforeEl = wrap.querySelector('.card');
+          const box = ensureMobileBox(wrap, 'sitesMobileView', beforeEl);
+          if (!isPhoneView()) { box.innerHTML = ''; return; }
+          const search = (wrap.querySelector('.fbar input')?.value || '').toLowerCase();
+          let rows = await dbGet('sites');
+          if (search) rows = rows.filter(s => [s.name, s.city, s.address, s.supervisor_name, s.phone].some(v => (v || '').toLowerCase().includes(search)));
+          const canEditSite = can('canEditSite');
+          const canDeleteSite = can('canDeleteSite');
+          box.innerHTML = rows.length ? rows.map((s, i) => {
+            const eng = Array.isArray(s.engineers) ? s.engineers.length : (String(s.engineers || '').trim() ? String(s.engineers).split(',').filter(Boolean).length : 0);
+            const sup = s.supervisor_name || s.supervisor || '–';
+            const location = s.city || s.address || '–';
+            return `
+              <div class="mobile-master-card">
+                <div class="mobile-master-head">
+                  <div class="mobile-master-left">
+                    <div class="mobile-master-avatar">🏗</div>
+                    <div>
+                      <div class="mobile-master-code">${padCode(i + 1)}</div>
+                      <div class="mobile-master-name">${esc(s.name || '')}</div>
+                      <div class="mobile-master-sub">${esc(location)}</div>
+                    </div>
+                  </div>
+                  <span class="badge ${statusBadgeClass(s.status || 'Active')}">${esc(s.status || 'Active')}</span>
+                </div>
+                <div class="mobile-info-grid">
+                  <div class="mobile-info-box"><div class="mobile-meta-label">Start Date</div><div class="mobile-meta-value">${fmtDate(s.start_date || s.date || '–')}</div></div>
+                  <div class="mobile-info-box"><div class="mobile-meta-label">Supervisor</div><div class="mobile-meta-value">${esc(sup)}</div></div>
+                  <div class="mobile-info-box"><div class="mobile-meta-label">Engineers</div><div class="mobile-meta-value">${eng} assigned</div></div>
+                  <div class="mobile-info-box"><div class="mobile-meta-label">Phone</div><div class="mobile-meta-value">${esc(s.phone || '–')}</div></div>
+                </div>
+                ${actionBtns(`editSite('${s.id}')`, `deleteSite('${s.id}')`, canEditSite, canDeleteSite)}
+              </div>`;
+          }).join('') : '<div class="mobile-empty">No sites found.</div>';
+        }
+
+        async function renderWorkersMobileUI() {
+          const wrap = document.getElementById('ms-workers');
+          if (!wrap) return;
+          const beforeEl = wrap.querySelector('.card');
+          const box = ensureMobileBox(wrap, 'workersMobileView', beforeEl);
+          if (!isPhoneView()) { box.innerHTML = ''; return; }
+          const search = (wrap.querySelector('.fbar input')?.value || '').toLowerCase();
+          const site = document.getElementById('wfSite')?.value || '';
+          const des = document.getElementById('wfDes')?.value || '';
+          let rows = await dbGet('workers');
+          if (site) rows = rows.filter(w => siteMatch(w, site, 'wfSite'));
+          if (des) rows = rows.filter(w => (w.designation || '').toLowerCase() === des.toLowerCase());
+          if (search) rows = rows.filter(w => [w.name, w.worker_name, w.phone, w.site_name].some(v => (v || '').toLowerCase().includes(search)));
+          const canEditWorker = can('canEditWorker');
+          const canDeleteWorker = can('canDeleteWorker');
+          box.innerHTML = rows.length ? rows.map((w) => {
+            const name = w.name || w.worker_name || '';
+            return `
+              <div class="mobile-master-card">
+                <div class="mobile-master-head">
+                  <div class="mobile-master-left">
+                    <div class="mobile-master-avatar">${initials(name)}</div>
+                    <div>
+                      <div class="mobile-master-name">${esc(name)}</div>
+                      <div class="mobile-master-sub">${esc(w.designation || '')} • ${esc(w.gender || '')}</div>
+                    </div>
+                  </div>
+                  <span class="badge ${statusBadgeClass(w.status || 'Active')}">${esc(w.status || 'Active')}</span>
+                </div>
+                <div class="mobile-info-grid">
+                  <div class="mobile-info-box"><div class="mobile-meta-label">Site</div><div class="mobile-meta-value">${esc(w.site_name || '–')}</div></div>
+                  <div class="mobile-info-box"><div class="mobile-meta-label">Wage/Day</div><div class="mobile-meta-value">${fmtF(w.wage || w.daily_wage || 0)}</div></div>
+                  <div class="mobile-info-box"><div class="mobile-meta-label">Phone</div><div class="mobile-meta-value">${esc(w.phone || '–')}</div></div>
+                </div>
+                ${actionBtns(`editWorker('${w.id}')`, `deleteWorker('${w.id}')`, canEditWorker, canDeleteWorker)}
+              </div>`;
+          }).join('') : '<div class="mobile-empty">No workers found.</div>';
+        }
+
+        async function renderMatMasterMobileUI() {
+          const wrap = document.getElementById('ms-materials');
+          if (!wrap) return;
+          const beforeEl = wrap.querySelector('.card');
+          const box = ensureMobileBox(wrap, 'matMasterMobileView', beforeEl);
+          if (!isPhoneView()) { box.innerHTML = ''; return; }
+          const search = (wrap.querySelector('.fbar input')?.value || '').toLowerCase();
+          let rows = await dbGet('materials_master');
+          if (search) rows = rows.filter(m => [m.name, m.category, m.unit].some(v => (v || '').toLowerCase().includes(search)));
+          const canEditMaterial = can('canEditMaterial');
+          const canDeleteMaterial = can('canDeleteMaterial');
+          box.innerHTML = rows.length ? rows.map((m, i) => `
+            <div class="mobile-master-card">
+              <div class="mobile-master-head">
+                <div class="mobile-master-left">
+                  <div class="mobile-master-avatar">📦</div>
+                  <div>
+                    <div class="mobile-master-code">${padCode(i + 1)}</div>
+                    <div class="mobile-master-name">${esc(m.name || '')}</div>
+                    <div class="mobile-master-sub">${esc(m.category || '')}</div>
+                  </div>
+                </div>
+                <span class="badge ${statusBadgeClass(m.status || 'Active')}">${esc(m.status || 'Active')}</span>
+              </div>
+              <div class="mobile-info-grid">
+                <div class="mobile-info-box"><div class="mobile-meta-label">Unit</div><div class="mobile-meta-value">${esc(m.unit || '–')}</div></div>
+                <div class="mobile-info-box"><div class="mobile-meta-label">Default Rate</div><div class="mobile-meta-value">${fmtF(m.default_rate || m.rate || 0)}</div></div>
+              </div>
+              ${actionBtns(`editMatMaster('${m.id}')`, `deleteMatMaster('${m.id}')`, canEditMaterial, canDeleteMaterial)}
+            </div>`).join('') : '<div class="mobile-empty">No materials found.</div>';
+        }
+
+        const mobileHooksApplied = new Set();
+
+        const wrapAsyncWhenReady = (name, fn) => {
+          if (mobileHooksApplied.has(name)) return true;
+          const original = window[name];
+          if (typeof original !== 'function') return false;
+
+          window[name] = async function (...args) {
+            const out = await original.apply(this, args);
+            try { await fn(); } catch (e) { console.error(e); }
+            return out;
+          };
+
+          mobileHooksApplied.add(name);
+          return true;
+        };
+
+        const renderAllMobileViews = () => {
+          renderLabourMobileUI();
+          renderMaterialsMobileUI();
+          renderCashMobileUI();
+          renderSitesMobileUI();
+          renderWorkersMobileUI();
+          renderMatMasterMobileUI();
+        };
+
+        const applyMobileHooks = () => {
+          const ok = [
+            wrapAsyncWhenReady('renderLabour', renderLabourMobileUI),
+            wrapAsyncWhenReady('renderMaterials', renderMaterialsMobileUI),
+            wrapAsyncWhenReady('renderCash', renderCashMobileUI),
+            wrapAsyncWhenReady('renderSites', renderSitesMobileUI),
+            wrapAsyncWhenReady('renderWorkers', renderWorkersMobileUI),
+            wrapAsyncWhenReady('renderMatMaster', renderMatMasterMobileUI),
+          ];
+
+          if (ok.every(Boolean)) {
+            renderAllMobileViews();
+            return;
+          }
+
+          setTimeout(applyMobileHooks, 200);
+        };
+
+        window.addEventListener('load', applyMobileHooks);
+        window.addEventListener('resize', renderAllMobileViews);
+
+
+      })();
+      // === END MOBILE UI REFRESH PATCH ===
+</script>
+  
+    <!-- ════════════ BOTTOM NAV ════════════ -->
+    <div id="bottomNav">
+      <button class="bnav-item active" id="bn-overview" onclick="showPageBnav('overview')">
+        <span class="bnav-icon">🏠</span>Overview
+      </button>
+      <button class="bnav-item" id="bn-labour" onclick="showPageBnav('labour')">
+        <span class="bnav-icon">👷</span>Labour
+      </button>
+      <button class="bnav-item" id="bn-materials" onclick="showPageBnav('materials')">
+        <span class="bnav-icon">🧱</span>Materials
+      </button>
+      <button class="bnav-item" id="bn-cashbook" onclick="showPageBnav('cashbook')">
+        <span class="bnav-icon">💰</span>Cashbook
+      </button>
+    </div>
+
   </body>
 </html>
