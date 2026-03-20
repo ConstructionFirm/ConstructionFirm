@@ -1670,6 +1670,99 @@
       }
       /* === END ATTENDANCE MODAL REFRESH === */
 
+    
+      /* === CASHBOOK + MASTER MOBILE REFRESH === */
+      .mobile-mini-stat.cash-card {
+        border-radius: 16px;
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+      .mobile-mini-stat.cash-card::after {
+        content: "";
+        position: absolute;
+        right: 12px;
+        bottom: 10px;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: rgba(249,115,22,0.08);
+      }
+      .mobile-mini-stat.cash-card .cash-card-icon {
+        position: absolute;
+        right: 24px;
+        bottom: 20px;
+        font-size: 20px;
+        z-index: 1;
+      }
+      .mobile-mini-stat.cash-card .mobile-mini-value {
+        font-size: 18px;
+        margin-top: 18px;
+      }
+      .mobile-cash-ledger-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        margin-bottom: 14px;
+      }
+      .mobile-cash-balance-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .mobile-cash-balance-table th {
+        text-align: left;
+        color: #9ca3af;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        padding: 0 0 10px;
+      }
+      .mobile-cash-balance-table td {
+        padding: 10px 0;
+        border-top: 1px solid #f1f5f9;
+        font-weight: 700;
+        vertical-align: top;
+      }
+      .mobile-cash-balance-table tr:first-child td {
+        border-top: 1px solid #eef2f7;
+      }
+      .mobile-master-tabs-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 8px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        margin-bottom: 14px;
+      }
+      .mobile-master-list-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        margin-bottom: 14px;
+      }
+      .mobile-master-meta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .mobile-master-meta-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .mobile-master-meta-box .mobile-meta-label {
+        margin-bottom: 4px;
+      }
+      @media (max-width: 600px) {
+        #page-cashbook > .mobile-alt-view .mobile-split-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      /* === END CASHBOOK + MASTER MOBILE REFRESH === */
+
     </style>
   </head>
   <body>
@@ -1710,7 +1803,7 @@
             <button class="pw-eye" type="button" onclick="togglePw('su_pass',this)">👁</button>
           </div>
           <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">Create Account</button>
-          <!-- <div class="role-summary">
+          <div class="role-summary">
             <div class="role-row">
               <div class="role-icon ri-yellow">👑</div>
               <div><div class="role-name">Admin</div><div class="role-desc">Full access + Masters</div></div>
@@ -1727,7 +1820,7 @@
               <div class="role-icon ri-blue">🗂️</div>
               <div><div class="role-name">Accountant</div><div class="role-desc">Cashbook only</div></div>
             </div>
-          </div> -->
+          </div>
         </div>
         <div id="li_err" class="auth-err"></div>
       </div>
@@ -4840,15 +4933,27 @@
             grouped[k] ||= { sent: 0, exp: 0 };
             if (e.type === 'Money Sent') grouped[k].sent += (+e.amount || 0); else grouped[k].exp += (+e.amount || 0);
           });
+
+          const cashCard = (value, label, color, icon) => `
+            <div class="mobile-mini-stat cash-card">
+              <div class="cash-card-icon" style="color:${color}">${icon}</div>
+              <div class="mobile-mini-value" style="color:${color}">${fmtF(value)}</div>
+              <div class="mobile-mini-label">${label}</div>
+            </div>`;
+
           box.innerHTML = `
             <div class="mobile-split-grid">
-              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#22c55e">↗</div><div class="mobile-mini-value" style="color:#22c55e">${fmtF(totalSent)}</div><div class="mobile-mini-label">Total Sent</div></div>
-              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#ef4444">↘</div><div class="mobile-mini-value" style="color:#ef4444">${fmtF(totalExp)}</div><div class="mobile-mini-label">Total Expenses</div></div>
-              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#3b82f6">₹</div><div class="mobile-mini-value" style="color:#3b82f6">${fmtF(balance)}</div><div class="mobile-mini-label">Balance</div></div>
-              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#eab308">◌</div><div class="mobile-mini-value" style="color:#eab308">${fmtF(labourPaid)}</div><div class="mobile-mini-label">Labour Paid</div></div>
+              ${cashCard(totalSent, 'Total Sent', '#22c55e', '↗')}
+              ${cashCard(totalExp, 'Total Expenses', '#ef4444', '↘')}
+              ${cashCard(balance, 'Balance', '#3b82f6', '₹')}
+              ${cashCard(labourPaid, 'Labour Paid', '#eab308', '◌')}
             </div>
-            <div class="mobile-mini-stat" style="margin-bottom:14px"><div class="mobile-mini-icon" style="color:#f97316">📦</div><div class="mobile-mini-value" style="color:#f97316">${fmtF(materialPurchased)}</div><div class="mobile-mini-label">Material Purchased</div></div>
-            <div class="mobile-white-card">
+            <div class="mobile-mini-stat cash-card" style="margin-bottom:14px">
+              <div class="cash-card-icon" style="color:#f59e0b">📦</div>
+              <div class="mobile-mini-value" style="color:#f97316">${fmtF(materialPurchased)}</div>
+              <div class="mobile-mini-label">Material Purchased</div>
+            </div>
+            <div class="mobile-cash-ledger-card">
               <div class="mobile-section-title">💰 Transactions</div>
               <div class="mobile-list" style="margin-top:12px">
                 ${E.length ? E.map(e => `
@@ -4864,20 +4969,23 @@
                   </div>`).join('') : '<div class="mobile-empty">No entries. Click &quot;+ Add Entry&quot;.</div>'}
               </div>
             </div>
-            <div class="mobile-white-card">
+            <div class="mobile-cash-ledger-card">
               <div class="mobile-section-title">🏗 Site Balance</div>
-              <div class="mobile-list" style="margin-top:12px">
-                ${Object.keys(grouped).length ? Object.entries(grouped).map(([name, v]) => `
-                  <div class="mobile-entry">
-                    <div class="mobile-entry-top" style="margin-bottom:0">
-                      <div class="mobile-entry-name">${esc(name)}</div>
-                      <div class="mobile-amount ${v.sent - v.exp >= 0 ? 'pos' : 'neg'}">${fmtF(v.sent - v.exp)}</div>
-                    </div>
-                    <div class="mobile-meta-grid" style="margin-top:10px">
-                      <div class="mobile-meta-item"><div class="mobile-meta-label">Sent</div><div class="mobile-meta-value" style="color:#f97316">${fmtF(v.sent)}</div></div>
-                      <div class="mobile-meta-item"><div class="mobile-meta-label">Expenses</div><div class="mobile-meta-value" style="color:#ef4444">${fmtF(v.exp)}</div></div>
-                    </div>
-                  </div>`).join('') : '<div class="mobile-empty">No site balance data.</div>'}
+              <div style="margin-top:12px;overflow:auto">
+                <table class="mobile-cash-balance-table">
+                  <thead>
+                    <tr><th>Site</th><th>Sent</th><th>Expenses</th><th>Balance</th></tr>
+                  </thead>
+                  <tbody>
+                    ${Object.keys(grouped).length ? Object.entries(grouped).map(([name, v]) => `
+                      <tr>
+                        <td>${esc(name)}</td>
+                        <td style="color:#f59e0b">${fmtF(v.sent)}</td>
+                        <td style="color:#ef4444">${fmtF(v.exp)}</td>
+                        <td style="color:${v.sent - v.exp >= 0 ? '#22c55e' : '#ef4444'}">${fmtF(v.sent - v.exp)}</td>
+                      </tr>`).join('') : '<tr><td colspan="4" class="mobile-empty">No site balance data.</td></tr>'}
+                  </tbody>
+                </table>
               </div>
             </div>`;
         }
@@ -4910,11 +5018,11 @@
                   </div>
                   <span class="badge ${statusBadgeClass(s.status || 'Active')}">${esc(s.status || 'Active')}</span>
                 </div>
-                <div class="mobile-info-grid">
-                  <div class="mobile-info-box"><div class="mobile-meta-label">Start Date</div><div class="mobile-meta-value">${fmtDate(s.start_date || s.date || '–')}</div></div>
-                  <div class="mobile-info-box"><div class="mobile-meta-label">Supervisor</div><div class="mobile-meta-value">${esc(sup)}</div></div>
-                  <div class="mobile-info-box"><div class="mobile-meta-label">Engineers</div><div class="mobile-meta-value">${eng} assigned</div></div>
-                  <div class="mobile-info-box"><div class="mobile-meta-label">Phone</div><div class="mobile-meta-value">${esc(s.phone || '–')}</div></div>
+                <div class="mobile-master-meta-grid">
+                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Start Date</div><div class="mobile-meta-value">${fmtDate(s.start_date || s.date || '–')}</div></div>
+                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Supervisor</div><div class="mobile-meta-value">${esc(sup)}</div></div>
+                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Engineers</div><div class="mobile-meta-value">${eng} assigned</div></div>
+                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Phone</div><div class="mobile-meta-value">${esc(s.phone || '–')}</div></div>
                 </div>
                 ${actionBtns(`editSite('${s.id}')`, `deleteSite('${s.id}')`, canEditSite, canDeleteSite)}
               </div>`;
