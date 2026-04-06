@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RamaConstruction – Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ════════════ LOGIN SCREEN ════════════ -->
+    <div id="loginScreen">
+      <div class="auth-box">
+        <div class="auth-logo">
+          <div class="logo-icon">🏗️</div>
+          <h2>ConstructCo</h2>
+          <p>Construction Management System</p>
+        </div>
+        <div class="auth-tabs">
+          <div
+            class="auth-tab active"
+            id="tabLogin"
+            onclick="switchAuthTab('login')"
+          >
+            Sign In
+          </div>
+          <div
+            class="auth-tab"
+            id="tabSignup"
+            onclick="switchAuthTab('signup')"
+          >
+            Create Account
+          </div>
+        </div>
+        <!-- LOGIN FORM -->
+        <div id="loginForm" class="auth-form">
+          <input id="li_email" type="email" placeholder="you@example.com" />
+          <div class="pw-wrap">
+            <input id="li_pass" type="password" placeholder="••••••••" />
+            <button
+              class="pw-eye"
+              type="button"
+              onclick="togglePw('li_pass', this)"
+            >
+              👁
+            </button>
+          </div>
+          <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
+            Sign In
+          </button>
+        </div>
+        <!-- SIGNUP FORM -->
+        <div id="signupForm" class="auth-form" style="display: none">
+          <select id="su_role">
+            <option value="">-- Select Role --</option>
+            <option value="admin">Admin</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="engineer">Engineer</option>
+            <option value="accountant">Accountant</option>
+          </select>
+          <input id="su_name" placeholder="Full Name" />
+          <input id="su_email" type="email" placeholder="you@example.com" />
+          <div class="pw-wrap">
+            <input
+              id="su_pass"
+              type="password"
+              placeholder="Password (min 6 chars)"
+            />
+            <button
+              class="pw-eye"
+              type="button"
+              onclick="togglePw('su_pass', this)"
+            >
+              👁
+            </button>
+          </div>
+          <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">
+            Create Account
+          </button>
+          <div class="role-summary">
+            <div class="role-row">
+              <div class="role-icon ri-yellow">👑</div>
+              <div>
+                <div class="role-name">Admin</div>
+                <div class="role-desc">Full access + Masters</div>
+              </div>
+            </div>
+            <div class="role-row">
+              <div class="role-icon ri-red">🦺</div>
+              <div>
+                <div class="role-name">Supervisor</div>
+                <div class="role-desc">Labour + Materials + Cashbook</div>
+              </div>
+            </div>
+            <div class="role-row">
+              <div class="role-icon ri-gray">⚙️</div>
+              <div>
+                <div class="role-name">Engineer</div>
+                <div class="role-desc">Labour + Materials only</div>
+              </div>
+            </div>
+            <div class="role-row">
+              <div class="role-icon ri-blue">🗂️</div>
+              <div>
+                <div class="role-name">Accountant</div>
+                <div class="role-desc">Cashbook only</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="li_err" class="auth-err"></div>
+      </div>
+    </div>
+
+    <!-- ════════════ APP WRAPPER ════════════ -->
+    <div
+      id="appWrapper"
+      style="display: none; height: 100vh; display: none; flex-direction: row"
+    >
+      <!-- SIDEBAR -->
+      <div
+        class="sidebar-overlay"
+        id="sidebarOverlay"
+        onclick="closeSidebar()"
+      ></div>
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-av">C</div>
+          <div class="brand-info">
+            <h3>RamaConstruction</h3>
+            <p>Management System</p>
+          </div>
+        </div>
+        <div class="nav-section">Main</div>
+        <div
+          class="nav-item active"
+          id="navOverview"
+          onclick="showPage('overview', this)"
+        >
+          <span>🏠</span>Overview
+        </div>
+        <div class="nav-section">Operations</div>
+        <div class="nav-item" id="navLabour" onclick="showPage('labour', this)">
+          <span>👷</span>Labour
+        </div>
+        <div
+          class="nav-item"
+          id="navMaterials"
+          onclick="showPage('materials', this)"
+        >
+          <span>🧱</span>Materials
+        </div>
+        <div
+          class="nav-item"
+          id="navCashbook"
+          onclick="showPage('cashbook', this)"
+        >
+          <span>💰</span>Cashbook
+        </div>
+        <div class="nav-section">Setup</div>
+        <div
+          class="nav-item"
+          id="navMasters"
+          onclick="showPage('masters', this)"
+        >
+          <span>⚙️</span>Masters
+        </div>
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <div class="user-av" id="userAv">A</div>
+            <div>
+              <div class="user-name" id="userEmail">User</div>
+              <div class="user-role" id="userRoleLbl">admin</div>
+            </div>
+          </div>
+          <button class="btn-signout" onclick="doLogout()">🚪 Sign Out</button>
+        </div>
+      </div>
+
+      <!-- MAIN -->
+      <div class="main">
+        <div class="topbar">
+          <!-- Mobile brand (shown ≤900px) -->
+          <div class="topbar-left">
+            <div class="topbar-brand">
+              <div class="topbar-brand-icon">🏗️</div>
+              <div class="topbar-brand-text">
+                <h3>ConstructCo</h3>
+                <p>Management System</p>
+              </div>
+            </div>
+            <!-- Desktop: hamburger + title -->
+            <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+            <div>
+              <div class="page-title" id="pgT">Overview</div>
+              <div class="page-bread" id="pgB">Dashboard › Overview</div>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <div class="date-badge">📅 <span id="todayDate"></span></div>
+            <div class="site-filter">
+              <select id="gSite" onchange="syncGlobalSite()">
+                <option value="">All Sites</option>
+              </select>
+            </div>
+            <button class="export-btn" onclick="exportData()">⬇ Export</button>
+            <button class="topbar-ham-btn" onclick="toggleSidebar()">☰</button>
+          </div>
+        </div>
+
+        <div class="content">
+          <!-- OVERVIEW -->
+          <div class="page active" id="page-overview">
+            <div class="g4">
+              <div class="kpi">
+                <div class="kpi-icon ki-orange">🏗️</div>
+                <div class="kpi-val" id="ov-sites">0</div>
+                <div class="kpi-lbl">Active Sites</div>
+                <div class="kpi-sub">Construction sites</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-icon ki-yellow">👷</div>
+                <div class="kpi-val" id="ov-labour">₹0</div>
+                <div class="kpi-lbl">Labour Cost (Today)</div>
+                <div class="kpi-sub" id="ov-present">0 present today</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-icon ki-blue">🧱</div>
+                <div class="kpi-val" id="ov-mat">₹0</div>
+                <div class="kpi-lbl">Material Cost (All)</div>
+                <div class="kpi-sub">Total IN value</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-icon ki-green">💰</div>
+                <div class="kpi-val" id="ov-cash">₹0</div>
+                <div class="kpi-lbl">Net Cash Balance</div>
+                <div class="kpi-sub">Sent minus expenses</div>
+              </div>
+            </div>
+            <div class="g2">
+              <div class="card">
+                <div class="ch">
+                  <div class="ct">📈 Labour Cost – Last 7 Days</div>
+                </div>
+                <div class="chbox"><canvas id="trendChart"></canvas></div>
+              </div>
+              <div class="card">
+                <div class="ch"><div class="ct">🏗️ Site-wise Cost</div></div>
+                <div class="chbox"><canvas id="siteChart"></canvas></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ch"><div class="ct">📋 Site Summary</div></div>
+              <div class="site-cards" id="ovTable"></div>
+            </div>
+          </div>
+
+          <!-- LABOUR -->
+          <div class="page" id="page-labour">
+            <div class="fbar">
+              <input
+                type="date"
+                class="fi"
+                id="labDate"
+                onchange="renderLabour()"
+              />
+              <select
+                class="fi"
+                id="labSite"
+                onchange="
+                  document.getElementById('gSite').value = this.value;
+                  renderLabour();
+                "
+              >
+                <option value="">All Sites</option>
+              </select>
+              <select class="fi" id="labDes" onchange="renderLabour()">
+                <option value="">All Designations</option>
+                <option>Mason</option>
+                <option>Labour</option>
+                <option>Helper</option>
+                <option>Carpenter</option>
+                <option>Barbender</option>
+              </select>
+              <input
+                type="text"
+                class="fi"
+                id="labSearch"
+                placeholder="Worker name..."
+                oninput="renderLabour()"
+                style="flex: 1; min-width: 130px"
+              />
+              <button
+                class="btn btn-primary"
+                id="btnAddAttend"
+                onclick="openAttendanceModal()"
+              >
+                + Add Attendance
+              </button>
+            </div>
+            <div class="g3">
+              <div class="card" style="margin-bottom: 0">
+                <div class="ch">
+                  <div class="ct">👷 Daily Attendance</div>
+                  <div id="labPresCount" class="badge bg-green">0 Present</div>
+                </div>
+                <div class="tw">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Worker</th>
+                        <th>Desig.</th>
+                        <th>Gender</th>
+                        <th>Site</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Hrs</th>
+                        <th>Wage</th>
+                        <th>Pay</th>
+                        <th>Remarks</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="labTable"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="sc">
+                <div class="sl">Total Pay (Filtered)</div>
+                <div class="sv" id="labTotalPay">₹0</div>
+                <div class="sr">
+                  <span>Present</span><strong id="labP">0</strong>
+                </div>
+                <div class="sr">
+                  <span>Half Day</span><strong id="labH">0</strong>
+                </div>
+                <div class="sr">
+                  <span>Absent</span><strong id="labA">0</strong>
+                </div>
+                <div class="sr">
+                  <span>Leave</span><strong id="labL">0</strong>
+                </div>
+                <div
+                  class="card"
+                  style="margin-top: 14px; margin-bottom: 0; padding: 12px"
+                >
+                  <div class="ct" style="margin-bottom: 8px">
+                    📊 Site Labour Split
+                  </div>
+                  <div class="chbox"><canvas id="labChart"></canvas></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MATERIALS -->
+          <div class="page" id="page-materials">
+            <div class="fbar">
+              <select
+                class="fi"
+                id="matSite"
+                onchange="
+                  document.getElementById('gSite').value = this.value;
+                  renderMaterials();
+                "
+              >
+                <option value="">All Sites</option>
+              </select>
+              <select class="fi" id="matName" onchange="renderMaterials()">
+                <option value="">All Materials</option>
+              </select>
+              <select class="fi" id="matType" onchange="renderMaterials()">
+                <option value="">All Types</option>
+                <option>In</option>
+                <option>Out</option>
+              </select>
+              <input
+                type="date"
+                class="fi"
+                id="matDate"
+                onchange="renderMaterials()"
+              />
+              <input
+                type="text"
+                class="fi"
+                id="matSearch"
+                placeholder="Search..."
+                oninput="renderMaterials()"
+                style="flex: 1"
+              />
+              <button
+                class="btn btn-primary"
+                id="btnAddMatEntry"
+                onclick="openModal('matModal')"
+              >
+                + Add Entry
+              </button>
+            </div>
+            <div class="g3">
+              <div class="card" style="margin-bottom: 0">
+                <div class="ch"><div class="ct">🧱 Material Ledger</div></div>
+                <div class="tw">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Site</th>
+                        <th>Type</th>
+                        <th>Material</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                        <th>Party/Use</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="matTable"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <div class="sc" style="margin-bottom: 14px">
+                  <div class="sl">IN Value</div>
+                  <div class="sv" id="matInVal">₹0</div>
+                  <div class="sr">
+                    <span>OUT Value</span><strong id="matOutVal">₹0</strong>
+                  </div>
+                  <div class="sr">
+                    <span>IN Entries</span><strong id="matInCnt">0</strong>
+                  </div>
+                  <div class="sr">
+                    <span>OUT Entries</span><strong id="matOutCnt">0</strong>
+                  </div>
+                </div>
+                <div class="card" style="margin-bottom: 0">
+                  <div class="ct" style="margin-bottom: 8px">📦 Stock</div>
+                  <div id="stockList" style="padding: 4px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CASHBOOK -->
+          <div class="page" id="page-cashbook">
+            <div class="fbar">
+              <select
+                class="fi"
+                id="cashSite"
+                onchange="
+                  document.getElementById('gSite').value = this.value;
+                  renderCash();
+                "
+              >
+                <option value="">All Sites</option>
+              </select>
+              <select class="fi" id="cashType" onchange="renderCash()">
+                <option value="">All Types</option>
+                <option>Money Sent</option>
+                <option>Expense</option>
+              </select>
+              <select class="fi" id="cashHead" onchange="renderCash()">
+                <option value="">All Heads</option>
+                <option>Labour Payment</option>
+                <option>Material Purchase</option>
+                <option>Petty Expense</option>
+                <option>Fuel</option>
+                <option>Other</option>
+              </select>
+              <input
+                type="date"
+                class="fi"
+                id="cashFrom"
+                onchange="renderCash()"
+              />
+              <input
+                type="date"
+                class="fi"
+                id="cashTo"
+                onchange="renderCash()"
+              />
+              <input
+                type="text"
+                class="fi"
+                id="cashSearch"
+                placeholder="Search..."
+                oninput="renderCash()"
+                style="flex: 1"
+              />
+              <button
+                class="btn btn-primary"
+                id="btnAddCash"
+                onclick="openModal('cashModal')"
+              >
+                + Add Entry
+              </button>
+            </div>
+            <div class="g5">
+              <div class="sp">
+                <div class="spv" id="cashSent" style="color: var(--success)">
+                  ₹0
+                </div>
+                <div class="spl">Total Sent</div>
+              </div>
+              <div class="sp">
+                <div class="spv" id="cashExp" style="color: var(--danger)">
+                  ₹0
+                </div>
+                <div class="spl">Total Expenses</div>
+              </div>
+              <div class="sp">
+                <div class="spv" id="cashBal" style="color: var(--info)">
+                  ₹0
+                </div>
+                <div class="spl">Balance</div>
+              </div>
+              <div class="sp">
+                <div class="spv" id="cashLabPaid" style="color: var(--warning)">
+                  ₹0
+                </div>
+                <div class="spl">Labour Paid</div>
+              </div>
+              <div class="sp">
+                <div
+                  class="spv"
+                  id="cashMatBought"
+                  style="color: var(--primary)"
+                >
+                  ₹0
+                </div>
+                <div class="spl">Material Purchased</div>
+              </div>
+            </div>
+            <div class="g2">
+              <div class="card" style="margin-bottom: 0">
+                <div class="ch"><div class="ct">💰 Transactions</div></div>
+                <div class="tw">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Site</th>
+                        <th>Type</th>
+                        <th>Head</th>
+                        <th>Amount</th>
+                        <th>Mode</th>
+                        <th>Party</th>
+                        <th>Notes</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cashTable"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom: 0">
+                <div class="ch"><div class="ct">🏗️ Site Balance</div></div>
+                <div class="tw">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Site</th>
+                        <th>Sent</th>
+                        <th>Expenses</th>
+                        <th>Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cashSiteTable"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MASTERS -->
+          <div class="page" id="page-masters">
+            <div class="mtabs">
+              <div
+                class="mtab active"
+                id="mtabSites"
+                onclick="showMaster('sites', this)"
+              >
+                🏗️ Sites
+              </div>
+              <div
+                class="mtab"
+                id="mtabWorkers"
+                onclick="showMaster('workers', this)"
+              >
+                👷 Workers
+              </div>
+              <div
+                class="mtab"
+                id="mtabMaterials"
+                onclick="showMaster('materials', this)"
+              >
+                🧱 Materials
+              </div>
+            </div>
+            <!-- SITES -->
+            <div id="ms-sites">
+              <div class="fbar">
+                <input
+                  class="fi"
+                  placeholder="Search..."
+                  oninput="renderSites(this.value)"
+                  style="flex: 1"
+                />
+                <button
+                  class="btn btn-primary"
+                  id="btnAddSite"
+                  onclick="
+                    editId = null;
+                    document.getElementById('siteModalTitle').textContent =
+                      'Add Site';
+                    populateSiteUserDropdowns();
+                    openModal('siteModal');
+                  "
+                >
+                  + Add Site
+                </button>
+              </div>
+              <div class="card">
+                <div class="tw">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Start Date</th>
+                        <th>Supervisor</th>
+                        <th>Engineers</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="sitesTable"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <!-- WORKERS -->
+            <div id="ms-workers" style="display: none">
+              <div class="fbar">
+                <input
+                  class="fi"
+                  placeholder="Search..."
+                  oninput="renderWorkers(this.value)"
+                  style="flex: 1"
+                />
+                <select
+                  class="fi"
+                  id="wfSite"
+                  onchange="
+                    document.getElementById('gSite').value = this.value;
+                    renderWorkers();
+                  "
+                >
+                  <option value="">All Sites</option>
+                </select>
+                <select class="fi" id="wfDes" onchange="renderWorkers()">
+                  <option value="">All Designations</option>
+                  <option>Mason</option>
+                  <option>Labour</option>
+                  <option>Helper</option>
+                  <option>Carpenter</option>
+                  <option>Barbender</option>
+                </select>
+                <button
+                  class="btn btn-primary"
+                  id="btnAddWorker"
+                  onclick="
+                    openModal('workerModal');
+                    editId = null;
+                  "
+                >
+                  + Add Worker
+                </button>
+              </div>
+              <div class="card">
+                <div class="tw">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Worker</th>
+                        <th>Designation</th>
+                        <th>Gender</th>
+                        <th>Site</th>
+                        <th>Wage/Day</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="workersTable"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <!-- MATERIALS MASTER -->
+            <div id="ms-materials" style="display: none">
+              <div class="fbar">
+                <input
+                  class="fi"
+                  placeholder="Search..."
+                  oninput="renderMatMaster(this.value)"
+                  style="flex: 1"
+                />
+                <button
+                  class="btn btn-primary"
+                  id="btnAddMatMaster"
+                  onclick="
+                    openModal('matMasterModal');
+                    editId = null;
+                  "
+                >
+                  + Add Material
+                </button>
+              </div>
+              <div class="card">
+                <div class="tw">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Unit</th>
+                        <th>Default Rate</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="matMasterTable"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- content -->
+      </div>
+      <!-- main -->
+    </div>
+    <!-- appWrapper -->
+
+    <!-- ════════════ MODALS ════════════ -->
+    <!-- Site Modal -->
+    <div class="modal-overlay" id="siteModal">
+      <div class="modal">
+        <div class="mh">
+          <h3 id="siteModalTitle">Add Site</h3>
+          <button class="close" onclick="closeModal('siteModal')">×</button>
+        </div>
+        <div class="mb">
+          <div class="row">
+            <div>
+              <label>Site Name *</label
+              ><input id="s_name" placeholder="e.g. Arera Colony" />
+            </div>
+            <div>
+              <label>City</label><input id="s_city" placeholder="Bhopal" />
+            </div>
+          </div>
+          <div class="row full">
+            <div><label>Address</label><input id="s_addr" /></div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Start Date</label><input type="date" id="s_date" />
+            </div>
+            <div>
+              <label>Status</label
+              ><select id="s_status">
+                <option>Active</option>
+                <option>Completed</option>
+                <option>On Hold</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Supervisor</label>
+              <select id="s_sup">
+                <option value="">-- Select Supervisor --</option>
+              </select>
+            </div>
+            <div><label>Phone</label><input id="s_phone" /></div>
+          </div>
+          <div class="row full">
+            <div>
+              <label
+                >Assign Engineers
+                <small style="font-weight: 400; color: var(--muted)"
+                  >(Ctrl/Cmd = multi-select)</small
+                ></label
+              >
+              <select
+                id="s_engineers"
+                multiple
+                style="
+                  height: 90px;
+                  width: 100%;
+                  padding: 6px;
+                  border: 1.5px solid var(--border);
+                  border-radius: 8px;
+                  font-size: 13px;
+                  outline: none;
+                  background: #fff;
+                "
+              ></select>
+            </div>
+          </div>
+        </div>
+        <div class="mf">
+          <button class="btn btn-outline" onclick="closeModal('siteModal')">
+            Cancel</button
+          ><button class="btn btn-primary" onclick="saveSite()">
+            Save Site
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Worker Modal -->
+    <div class="modal-overlay" id="workerModal">
+      <div class="modal">
+        <div class="mh">
+          <h3 id="workerModalTitle">Add Worker</h3>
+          <button class="close" onclick="closeModal('workerModal')">×</button>
+        </div>
+        <div class="mb">
+          <div class="row">
+            <div><label>Name *</label><input id="w_name" /></div>
+            <div><label>Phone</label><input id="w_phone" /></div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Gender</label
+              ><select id="w_gender">
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label>Designation</label
+              ><select id="w_des">
+                <option>Labour</option>
+                <option>Mason</option>
+                <option>Helper</option>
+                <option>Carpenter</option>
+                <option>Barbender</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Daily Wage (₹)</label><input type="number" id="w_wage" />
+            </div>
+            <div>
+              <label>Site</label
+              ><select id="w_site"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Status</label
+              ><select id="w_status">
+                <option>Active</option>
+                <option>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="mf">
+          <button class="btn btn-outline" onclick="closeModal('workerModal')">
+            Cancel</button
+          ><button class="btn btn-primary" onclick="saveWorker()">
+            Save Worker
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Material Master Modal -->
+    <div class="modal-overlay" id="matMasterModal">
+      <div class="modal">
+        <div class="mh">
+          <h3 id="matMasterModalTitle">Add Material</h3>
+          <button class="close" onclick="closeModal('matMasterModal')">
+            ×
+          </button>
+        </div>
+        <div class="mb">
+          <div class="row">
+            <div><label>Name *</label><input id="mm_name" /></div>
+            <div>
+              <label>Category</label
+              ><select id="mm_cat">
+                <option>Cement</option>
+                <option>Sand</option>
+                <option>Aggregate</option>
+                <option>Steel</option>
+                <option>Bricks</option>
+                <option>Paint</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Unit</label
+              ><input id="mm_unit" placeholder="Bag / Kg / Cft" />
+            </div>
+            <div>
+              <label>Default Rate (₹)</label
+              ><input type="number" id="mm_rate" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Status</label
+              ><select id="mm_status">
+                <option>Active</option>
+                <option>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="mf">
+          <button
+            class="btn btn-outline"
+            onclick="closeModal('matMasterModal')"
+          >
+            Cancel</button
+          ><button class="btn btn-primary" onclick="saveMatMaster()">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Attendance Modal -->
+    <div class="modal-overlay" id="labModal">
+      <div class="modal attendance-modal-shell">
+        <div class="mh attendance-modal-head">
+          <div>
+            <h3 id="labModalTitle">Add Attendance</h3>
+            <p class="attendance-subtitle">Labour · Add Attendance</p>
+          </div>
+          <button class="close" onclick="closeModal('labModal')">×</button>
+        </div>
+        <div class="mb attendance-modal-body">
+          <div class="attendance-block">
+            <div class="attendance-block-title">Worker Details</div>
+            <div class="row full">
+              <div>
+                <label>Worker Name *</label>
+                <select id="l_worker" onchange="autoFillWorker()">
+                  <option value="">Select worker</option>
+                </select>
+              </div>
+            </div>
+            <div class="row full">
+              <div>
+                <label>Designation *</label>
+                <select id="l_des">
+                  <option value="">Select designation</option>
+                  <option>Mason</option>
+                  <option>Labour</option>
+                  <option>Helper</option>
+                  <option>Carpenter</option>
+                  <option>Barbender</option>
+                </select>
+              </div>
+            </div>
+            <div class="row full">
+              <div>
+                <label>Gender *</label>
+                <input type="hidden" id="l_gender" />
+                <div class="attendance-pill-grid two" id="genderBtns">
+                  <button
+                    type="button"
+                    class="attendance-pill-btn"
+                    data-value="Male"
+                    onclick="setAttendanceGender('Male')"
+                  >
+                    Male
+                  </button>
+                  <button
+                    type="button"
+                    class="attendance-pill-btn"
+                    data-value="Female"
+                    onclick="setAttendanceGender('Female')"
+                  >
+                    Female
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="attendance-block">
+            <div class="attendance-block-title">Site & Date</div>
+            <div class="row full">
+              <div>
+                <label>Site *</label>
+                <select id="l_site" onchange="populateWorkerDropdown()">
+                  <option value="">Select site</option>
+                </select>
+              </div>
+            </div>
+            <div class="row full">
+              <div>
+                <label>Date *</label>
+                <input type="date" id="l_date" />
+              </div>
+            </div>
+          </div>
+
+          <div class="attendance-block">
+            <div class="attendance-block-title">Attendance Status</div>
+            <input type="hidden" id="l_status" value="Present" />
+            <div class="attendance-pill-grid two" id="statusBtns">
+              <button
+                type="button"
+                class="attendance-pill-btn active success"
+                data-value="Present"
+                onclick="setAttendanceStatus('Present')"
+              >
+                ✓ Present
+              </button>
+              <button
+                type="button"
+                class="attendance-pill-btn"
+                data-value="Half Day"
+                onclick="setAttendanceStatus('Half Day')"
+              >
+                Half Day
+              </button>
+              <button
+                type="button"
+                class="attendance-pill-btn"
+                data-value="Absent"
+                onclick="setAttendanceStatus('Absent')"
+              >
+                Absent
+              </button>
+              <button
+                type="button"
+                class="attendance-pill-btn"
+                data-value="Leave"
+                onclick="setAttendanceStatus('Leave')"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+
+          <div class="attendance-block">
+            <div class="attendance-block-title">Pay Details</div>
+            <div class="row">
+              <div>
+                <label>Hours Worked</label>
+                <input
+                  type="number"
+                  id="l_hours"
+                  placeholder="8"
+                  oninput="calcPay()"
+                />
+              </div>
+              <div>
+                <label>Wage/Day (₹)</label>
+                <input type="number" id="l_wage" oninput="calcPay()" />
+              </div>
+            </div>
+            <div class="attendance-pay-box">
+              <span>Calculated Pay</span>
+              <strong id="attendancePayPreview">₹0</strong>
+            </div>
+            <input type="hidden" id="l_pay" />
+          </div>
+
+          <div class="attendance-block">
+            <div>
+              <label>Remarks (Optional)</label>
+              <textarea
+                id="l_remarks"
+                rows="3"
+                placeholder="Any notes about this attendance..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="mf attendance-modal-footer">
+          <button
+            class="btn btn-primary attendance-save-btn"
+            onclick="saveAttendance()"
+          >
+            Save Attendance
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Material Entry Modal -->
+    <div class="modal-overlay" id="matModal">
+      <div class="modal">
+        <div class="mh">
+          <h3 id="matModalTitle">Add Material Entry</h3>
+          <button class="close" onclick="closeModal('matModal')">×</button>
+        </div>
+        <div class="mb">
+          <div class="row">
+            <div><label>Date *</label><input type="date" id="me_date" /></div>
+            <div>
+              <label>Site *</label
+              ><select id="me_site"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Type *</label
+              ><select id="me_type">
+                <option>In</option>
+                <option>Out</option>
+              </select>
+            </div>
+            <div>
+              <label>Material *</label
+              ><select id="me_mat" onchange="autoFillMat()">
+                <option value="">-- Select --</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Quantity *</label
+              ><input type="number" id="me_qty" oninput="calcMatAmt()" />
+            </div>
+            <div><label>Unit</label><input id="me_unit" /></div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Rate (₹)</label
+              ><input type="number" id="me_rate" oninput="calcMatAmt()" />
+            </div>
+            <div>
+              <label>Amount (₹)</label
+              ><input
+                type="number"
+                id="me_amt"
+                readonly
+                style="
+                  background: #f1f5f9;
+                  font-weight: 700;
+                  color: var(--primary);
+                "
+              />
+            </div>
+          </div>
+          <div class="row full">
+            <div><label>Supplier / Used For</label><input id="me_party" /></div>
+          </div>
+        </div>
+        <div class="mf">
+          <button class="btn btn-outline" onclick="closeModal('matModal')">
+            Cancel</button
+          ><button class="btn btn-primary" onclick="saveMatEntry()">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Cash Modal -->
+    <div class="modal-overlay" id="cashModal">
+      <div class="modal">
+        <div class="mh">
+          <h3 id="cashModalTitle">Add Cash Entry</h3>
+          <button class="close" onclick="closeModal('cashModal')">×</button>
+        </div>
+        <div class="mb">
+          <div class="row">
+            <div><label>Date *</label><input type="date" id="c_date" /></div>
+            <div>
+              <label>Site *</label
+              ><select id="c_site"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Type *</label
+              ><select id="c_type">
+                <option>Money Sent</option>
+                <option>Expense</option>
+              </select>
+            </div>
+            <div>
+              <label>Head</label
+              ><select id="c_head">
+                <option>Labour Payment</option>
+                <option>Material Purchase</option>
+                <option>Petty Expense</option>
+                <option>Fuel</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Amount (₹) *</label><input type="number" id="c_amt" />
+            </div>
+            <div>
+              <label>Mode</label
+              ><select id="c_mode">
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Bank Transfer</option>
+                <option>Cheque</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div><label>Paid To / From</label><input id="c_party" /></div>
+            <div><label>Notes</label><input id="c_notes" /></div>
+          </div>
+        </div>
+        <div class="mf">
+          <button class="btn btn-outline" onclick="closeModal('cashModal')">
+            Cancel</button
+          ><button class="btn btn-primary" onclick="saveCash()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <!-- ════════════ BOTTOM NAV ════════════ -->
+    <div id="bottomNav">
+      <button
+        class="bnav-item active"
+        id="bn-overview"
+        onclick="showPageBnav('overview')"
+      >
+        <span class="bnav-icon">🏠</span>Overview
+      </button>
+      <button class="bnav-item" id="bn-labour" onclick="showPageBnav('labour')">
+        <span class="bnav-icon">👷</span>Labour
+      </button>
+      <button
+        class="bnav-item"
+        id="bn-materials"
+        onclick="showPageBnav('materials')"
+      >
+        <span class="bnav-icon">🧱</span>Materials
+      </button>
+      <button
+        class="bnav-item"
+        id="bn-cashbook"
+        onclick="showPageBnav('cashbook')"
+      >
+        <span class="bnav-icon">💰</span>Cashbook
+      </button>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
