@@ -1,3 +1,4 @@
+// ── SUPABASE CREDENTIALS ──
 const SUPABASE_URL = "https://olylorarbaizpogbbjmb.supabase.co";
 const SUPABASE_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9seWxvcmFyYmFpenBvZ2Jiam1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODEzMjIsImV4cCI6MjA4OTA1NzMyMn0.ESovUr-sRcrrFyLRY9g6dFeW-opcJUf0qyw_CbKBDVA";
@@ -293,6 +294,8 @@ async function showApp(user) {
     document.getElementById("userEmail").textContent = name;
     document.getElementById("userRoleLbl").textContent = currentRole;
     document.getElementById("userAv").textContent = name[0].toUpperCase();
+    const tAv = document.getElementById("topAv");
+    if(tAv) tAv.textContent = name[0].toUpperCase() + (name.split(" ")[1] || name[0])[0].toUpperCase();
     applyRoleVisibility();
     await loadAllowedSites(user);
     // Auto-create profile entry if missing (handles pre-profiles-table users)
@@ -314,19 +317,19 @@ async function showApp(user) {
 function applyRoleVisibility() {
     const r = currentRole;
     document.getElementById("navOverview").style.display = "flex";
-    document.getElementById("navLabour").style.display =
-        r === "accountant" ? "none" : "flex";
-    document.getElementById("navMaterials").style.display =
-        r === "accountant" ? "none" : "flex";
-    document.getElementById("navCashbook").style.display =
-        r === "engineer" ? "none" : "flex";
-    document.getElementById("navMasters").style.display =
-        r === "admin" || r === "supervisor" ? "flex" : "none";
+    document.getElementById("navLabour").style.display = (r === "accountant") ? "none" : "flex";
+    document.getElementById("navMaterials").style.display = (r === "accountant") ? "none" : "flex";
+    document.getElementById("navCashbook").style.display = (r === "engineer") ? "none" : "flex";
+    
+    // Dedicated Sites/Workers visibility
+    const nSi = document.getElementById("navSites");
+    if(nSi) nSi.style.display = (r === "admin" || r === "supervisor") ? "flex" : "none";
+    const nWo = document.getElementById("navWorkers");
+    if(nWo) nWo.style.display = (r === "admin" || r === "supervisor") ? "flex" : "none";
 
     const btnMap = [
         ["btnAddSite", "canAddSite"],
         ["btnAddWorker", "canAddWorker"],
-        ["btnAddMatMaster", "canAddMaterial"],
         ["btnAddAttend", "canAddAttendance"],
         ["btnAddMatEntry", "canAddMatEntry"],
         ["btnAddCash", "canAddCash"],
@@ -335,14 +338,10 @@ function applyRoleVisibility() {
         const el = document.getElementById(id);
         if (el) el.style.display = can(perm) ? "inline-block" : "none";
     });
-
-    // Supervisor sees only Workers tab in Masters
-    if (r === "supervisor") {
-        const ts = document.getElementById("mtabSites");
-        const tm = document.getElementById("mtabMaterials");
-        if (ts) ts.style.display = "none";
-        if (tm) tm.style.display = "none";
-    }
+    const tdEl = document.getElementById("todayDate");
+    if (tdEl) tdEl.textContent = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    const phEl = document.getElementById("pageHeaderDate");
+    if (phEl) phEl.textContent = tdEl ? tdEl.textContent : new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 }
 
 // ── INIT ──
@@ -510,7 +509,7 @@ async function populateWorkerDropdown() {
         (w) => w.status === "Active" && (!siteId || w.site_id === siteId),
     );
     document.getElementById("l_worker").innerHTML =
-        `<option value="">Select worker</option>` +
+        `<option value="">-- Select Worker --</option>` +
         filt
             .map(
                 (w) =>
@@ -521,16 +520,11 @@ async function populateWorkerDropdown() {
 function autoFillWorker() {
     const sel = document.getElementById("l_worker");
     const opt = sel.options[sel.selectedIndex];
-    if (!opt || !opt.value) {
-        document.getElementById("l_des").value = "";
-        setAttendanceGender("");
-        document.getElementById("l_wage").value = 0;
-        calcPay();
-        return;
-    }
+    if (!opt || !opt.value) return;
     document.getElementById("l_des").value =
         opt.getAttribute("data-des") || "";
-    setAttendanceGender(opt.getAttribute("data-gender") || "");
+    document.getElementById("l_gender").value =
+        opt.getAttribute("data-gender") || "";
     document.getElementById("l_wage").value =
         opt.getAttribute("data-wage") || 0;
     calcPay();
@@ -545,51 +539,12 @@ async function autoFillMat() {
         calcMatAmt();
     }
 }
-function setAttendanceGender(value = "") {
-    document.getElementById("l_gender").value = value;
-    document
-        .querySelectorAll("#genderBtns .attendance-pill-btn")
-        .forEach((btn) => {
-            btn.classList.toggle(
-                "gender-active",
-                btn.dataset.value === value && !!value,
-            );
-        });
-}
-function setAttendanceStatus(value = "Present") {
-    const input = document.getElementById("l_status");
-    if (input) input.value = value;
-    document
-        .querySelectorAll("#statusBtns .attendance-pill-btn")
-        .forEach((btn) => {
-            btn.classList.remove(
-                "active",
-                "halfday-active",
-                "absent-active",
-                "leave-active",
-            );
-            if (btn.dataset.value === value) {
-                if (value === "Present") btn.classList.add("active");
-                else if (value === "Half Day")
-                    btn.classList.add("halfday-active");
-                else if (value === "Absent") btn.classList.add("absent-active");
-                else if (value === "Leave") btn.classList.add("leave-active");
-            }
-        });
-    calcPay();
-}
 function calcPay() {
     const wage = parseFloat(document.getElementById("l_wage").value) || 0;
-    const st = document.getElementById("l_status").value || "Present";
-    const hrs = parseFloat(document.getElementById("l_hours").value) || 0;
-    let pay = 0;
-    if (st === "Present") pay = wage;
-    else if (st === "Half Day") pay = wage / 2;
-    else if (st === "Absent" || st === "Leave") pay = 0;
-    if (hrs > 0 && st === "Present") pay = (wage / 8) * hrs;
-    document.getElementById("l_pay").value = Math.round(pay * 100) / 100;
-    const preview = document.getElementById("attendancePayPreview");
-    if (preview) preview.textContent = fmtF(pay);
+    const st = document.getElementById("l_status").value;
+    document.getElementById("l_pay").value = (
+        st === "Present" ? wage : st === "Half Day" ? wage * 0.5 : 0
+    ).toFixed(2);
 }
 function calcMatAmt() {
     const q = parseFloat(document.getElementById("me_qty").value) || 0;
@@ -600,10 +555,64 @@ function calcMatAmt() {
 // ── MODAL HELPERS ──
 function openModal(id) {
     document.getElementById(id).classList.add("open");
+    // Reset type toggles to their defaults when opening fresh
+    if (id === 'cashModal') {
+        const ms = document.getElementById('cashTypeMS');
+        const exp = document.getElementById('cashTypeExp');
+        if (ms && exp) { ms.className = 'm-type-btn active-green'; exp.className = 'm-type-btn'; }
+        // Reset mode grid — default UPI active
+        document.querySelectorAll('#cashModeGrid .m-mode-btn').forEach((b, i) => {
+            b.className = i === 1 ? 'm-mode-btn active' : 'm-mode-btn';
+        });
+        const cm = document.getElementById('c_mode');
+        if (cm) cm.value = 'UPI';
+    }
+    if (id === 'matModal') {
+        const inBtn = document.getElementById('meTypeIn');
+        const outBtn = document.getElementById('meTypeOut');
+        if (inBtn && outBtn) { inBtn.className = 'm-type-btn active-orange'; outBtn.className = 'm-type-btn'; }
+        const mt = document.getElementById('me_type');
+        if (mt) mt.value = 'In';
+    }
+    if (id === 'labModal') {
+        const grid = document.querySelector('#labModal .m-status-grid');
+        if (grid) {
+            grid.querySelectorAll('.m-status-btn').forEach(b => b.className = 'm-status-btn');
+            const first = grid.querySelector('.m-status-btn');
+            if (first) first.className = 'm-status-btn active-present';
+        }
+        const ls = document.getElementById('l_status');
+        if (ls) ls.value = 'Present';
+
+        // Date access: Admin gets full access, others are locked to today for new entries
+        const dateInput = document.getElementById("l_date");
+        if (dateInput) {
+            if (currentRole === "admin") {
+                dateInput.readOnly = false;
+                dateInput.style.background = "";
+                dateInput.style.cursor = "";
+                dateInput.min = "";
+                dateInput.max = "";
+            } else if (!editId) {
+                const today = getToday();
+                dateInput.value = today;
+                dateInput.readOnly = true;
+                dateInput.style.background = "var(--bg-readonly)";
+                dateInput.style.cursor = "not-allowed";
+            }
+        }
+    }
 }
 function closeModal(id) {
     document.getElementById(id).classList.remove("open");
     editId = null;
+}
+// Payment mode pill selector for cash modal
+function setCashMode(mode, btn) {
+    document.querySelectorAll('#cashModeGrid .m-mode-btn').forEach(b => b.className = 'm-mode-btn');
+    btn.className = 'm-mode-btn active';
+    const sel = document.getElementById('c_mode');
+    if (sel) sel.value = mode;
 }
 function toast(msg, ok = true) {
     const t = document.getElementById("toast");
@@ -656,18 +665,16 @@ function openAttendanceModal() {
     }
     document.getElementById("l_site").value = "";
     document.getElementById("l_worker").innerHTML =
-        '<option value="">Select worker</option>';
+        '<option value="">-- Select Worker --</option>';
     document.getElementById("l_des").value = "";
-    document.getElementById("l_des").value = "";
-    setAttendanceGender("");
-    document.getElementById("l_wage").value = 0;
-    document.getElementById("l_hours").value = 8;
-    document.getElementById("l_pay").value = 0;
+    document.getElementById("l_gender").value = "";
+    document.getElementById("l_wage").value = "";
+    document.getElementById("l_hours").value = "";
+    document.getElementById("l_pay").value = "";
     document.getElementById("l_remarks").value = "";
+    document.getElementById("l_status").value = "Present";
     document.getElementById("labModalTitle").textContent = "Add Attendance";
     populateAllDropdowns();
-    setAttendanceStatus("Present");
-    calcPay();
     openModal("labModal");
 }
 
@@ -987,13 +994,12 @@ async function editAttendance(id) {
     await populateWorkerDropdown();
     document.getElementById("l_worker").value = e.worker_id;
     document.getElementById("l_des").value = e.designation || "";
-    setAttendanceGender(e.gender || "");
+    document.getElementById("l_gender").value = e.gender || "";
     document.getElementById("l_wage").value = e.wage || 0;
+    document.getElementById("l_status").value = e.status || "Present";
     document.getElementById("l_hours").value = e.hours || "";
     document.getElementById("l_pay").value = e.pay || 0;
     document.getElementById("l_remarks").value = e.remarks || "";
-    setAttendanceStatus(e.status || "Present");
-    calcPay();
 
     // Lock date for non-admin
     const dateInput = document.getElementById("l_date");
@@ -1002,7 +1008,7 @@ async function editAttendance(id) {
         dateInput.min = today;
         dateInput.max = today;
         dateInput.readOnly = true;
-        dateInput.style.background = "#f1f5f9";
+        dateInput.style.background = "var(--bg-readonly)";
         dateInput.style.cursor = "not-allowed";
     } else {
         dateInput.min = "";
@@ -1012,6 +1018,17 @@ async function editAttendance(id) {
         dateInput.style.cursor = "";
     }
     openModal("labModal");
+    // Sync status pill buttons AFTER openModal (openModal resets to Present)
+    const statusClassMap = { "Present": "active-present", "Half Day": "active-halfday", "Absent": "active-absent", "Leave": "active-leave" };
+    const pillGrid = document.querySelector("#labModal .m-status-grid");
+    if (pillGrid) {
+        const statuses = ["Present", "Half Day", "Absent", "Leave"];
+        pillGrid.querySelectorAll(".m-status-btn").forEach((btn, i) => {
+            btn.className = (statuses[i] === (e.status || "Present"))
+                ? "m-status-btn " + (statusClassMap[statuses[i]] || "")
+                : "m-status-btn";
+        });
+    }
 }
 async function deleteAttendance(id) {
     if (!guard("canDeleteAttendance", "Only Admin can delete attendance"))
@@ -1089,6 +1106,18 @@ async function editMatEntry(id) {
     document.getElementById("me_amt").value = e.amount;
     document.getElementById("me_party").value = e.party || "";
     openModal("matModal");
+    // Sync IN/OUT toggle AFTER openModal
+    const inBtnE = document.getElementById("meTypeIn");
+    const outBtnE = document.getElementById("meTypeOut");
+    if (inBtnE && outBtnE) {
+        if (e.type === "In") {
+            inBtnE.className = "m-type-btn active-orange";
+            outBtnE.className = "m-type-btn";
+        } else {
+            outBtnE.className = "m-type-btn active-orange";
+            inBtnE.className = "m-type-btn";
+        }
+    }
 }
 async function deleteMatEntry(id) {
     if (
@@ -1158,7 +1187,26 @@ async function editCash(id) {
     document.getElementById("c_mode").value = e.mode || "Cash";
     document.getElementById("c_party").value = e.party || "";
     document.getElementById("c_notes").value = e.notes || "";
+
     openModal("cashModal");
+    // Sync type toggle pills AFTER openModal (openModal resets to defaults)
+    const msBtnE = document.getElementById("cashTypeMS");
+    const expBtnE = document.getElementById("cashTypeExp");
+    if (msBtnE && expBtnE) {
+        if (e.type === "Money Sent") {
+            msBtnE.className = "m-type-btn active-green";
+            expBtnE.className = "m-type-btn";
+        } else {
+            expBtnE.className = "m-type-btn active-green";
+            msBtnE.className = "m-type-btn";
+        }
+    }
+    // Sync payment mode pill grid
+    const modeLabels = { "Cash": "Cash", "UPI": "UPI", "Bank Transfer": "Bank", "Cheque": "Cheque", "NEFT": "NEFT", "RTGS": "RTGS" };
+    document.querySelectorAll("#cashModeGrid .m-mode-btn").forEach(btn => {
+        const matches = Object.entries(modeLabels).some(([val, lbl]) => val === (e.mode || "Cash") && btn.textContent.trim() === lbl);
+        btn.className = matches ? "m-mode-btn active" : "m-mode-btn";
+    });
 }
 async function deleteCash(id) {
     if (!guard("canDeleteCash", "Only Admin can delete cash entries"))
@@ -1191,112 +1239,94 @@ async function renderOverview() {
         dbGet("material_entries"),
         dbGet("cashbook"),
     ]);
-    const today = getToday();
 
     // Helper: does a record belong to selected site?
     function matchSite(rec) {
         if (!gSite) return true;
-        return (
-            rec.site_id === gSite ||
-            (rec.site_name && rec.site_name.trim() === gSiteName)
-        );
+        return rec.site_id === gSite || (rec.site_name && rec.site_name.trim() === gSiteName);
     }
 
     // Filter all data by selected site upfront
-    const filtSites = gSite
-        ? sites.filter((s) => s.id === gSite || s.name === gSiteName)
-        : sites;
+    const filtSites = gSite ? sites.filter(s => s.id === gSite || s.name === gSiteName) : sites;
     const filtAttend = attend.filter(matchSite);
     const filtMats = mats.filter(matchSite);
     const filtCash = cash.filter(matchSite);
 
+    // ── TREND CALCULATIONS ──
+    const last7Days = [];
+    const prev7Days = [];
+    for (let i = 0; i < 7; i++) {
+        last7Days.push(new Date(new Date().getTime() - i * 86400000).toISOString().split("T")[0]);
+        prev7Days.push(new Date(new Date().getTime() - (i + 7) * 86400000).toISOString().split("T")[0]);
+    }
+    const sumLab = (dates) => filtAttend.filter(a => dates.includes(a.date)).reduce((s, a) => s + (a.pay || 0), 0);
+    const sumCash = (dates) => filtCash.filter(c => dates.includes(c.date) && c.type === "Money Sent").reduce((s, c) => s + (c.amount || 0), 0);
+    
+    const curLab7 = sumLab(last7Days);
+    const oldLab7 = sumLab(prev7Days);
+    const labTrend = oldLab7 > 0 ? Math.round(((curLab7 - oldLab7) / oldLab7) * 100) : 0;
+    
+    const curCash7 = sumCash(last7Days);
+    const oldCash7 = sumCash(prev7Days);
+    const cashTrend = oldCash7 > 0 ? Math.round(((curCash7 - oldCash7) / oldCash7) * 100) : 0;
+    const sitesTrend = sites.filter(s => s.status === "Active" && s.created_at >= last7Days[6]).length;
+
+    // Update Trend Labels
+    const sTrendEl = document.getElementById("ov-sites-trend");
+    if(sTrendEl) sTrendEl.innerHTML = `<span style="color: var(--success);">↗ +${sitesTrend}</span>`;
+    const lTrendEl = document.getElementById("ov-labour-trend");
+    if(lTrendEl) lTrendEl.innerHTML = `<span style="color: ${labTrend >= 0 ? 'var(--success)' : 'var(--danger)'};">${labTrend >= 0 ? '↗' : '↘'} ${labTrend >= 0 ? '+' : ''}${labTrend}%</span>`;
+    const cTrendEl = document.getElementById("ov-cash-trend");
+    if(cTrendEl) cTrendEl.innerHTML = `<span style="color: ${cashTrend >= 0 ? 'var(--success)' : 'var(--danger)'};">${cashTrend >= 0 ? '↗' : '↘'} ${cashTrend >= 0 ? '+' : ''}${cashTrend}%</span>`;
+
     // ── KPIs ──
-    document.getElementById("ov-sites").textContent = filtSites.filter(
-        (s) => s.status === "Active",
-    ).length;
+    document.getElementById("ov-sites").textContent = filtSites.filter(s => s.status === "Active").length;
+    document.getElementById("ov-labour").textContent = fmtF(filtAttend.reduce((s, a) => s + (a.pay || 0), 0));
+    document.getElementById("ov-mat").textContent = fmtF(filtMats.filter(m => m.type === "In").reduce((s, m) => s + (m.amount || 0), 0));
 
-    const todayLab = filtAttend.filter((a) => a.date === today);
-    document.getElementById("ov-labour").textContent = fmt(
-        todayLab.reduce((s, a) => s + (a.pay || 0), 0),
-    );
-    document.getElementById("ov-present").textContent =
-        todayLab.filter((a) => a.status === "Present").length +
-        " present today";
-
-    document.getElementById("ov-mat").textContent = fmt(
-        filtMats
-            .filter((m) => m.type === "In")
-            .reduce((s, m) => s + (m.amount || 0), 0),
-    );
-
-    const sent = filtCash
-        .filter((c) => c.type === "Money Sent")
-        .reduce((s, c) => s + (c.amount || 0), 0);
-    const exp = filtCash
-        .filter((c) => c.type === "Expense")
-        .reduce((s, c) => s + (c.amount || 0), 0);
-    const bal = sent - exp;
+    const sentOverall = filtCash.filter(c => c.type === "Money Sent").reduce((s, c) => s + (c.amount || 0), 0);
+    const expOverall = filtCash.filter(c => c.type === "Expense").reduce((s, c) => s + (c.amount || 0), 0);
+    const balOverall = sentOverall - expOverall;
     const bEl = document.getElementById("ov-cash");
-    bEl.textContent = fmt(Math.abs(bal));
-    bEl.style.color = bal >= 0 ? "var(--success)" : "var(--danger)";
+    if(bEl) {
+        bEl.textContent = fmtF(Math.abs(balOverall));
+        bEl.style.color = balOverall >= 0 ? "var(--success)" : "var(--danger)";
+    }
 
-    // ── Site Summary Table (filtered) ──
-    const sc = {
-        Active: "bg-green",
-        "On Hold": "bg-orange",
-        Completed: "bg-gray",
-    };
-    // ── Site Summary Cards ──
-    document.getElementById("ovTable").innerHTML =
-        filtSites.length === 0
-            ? '<div style="text-align:center;color:var(--muted);padding:24px 0">No sites yet.</div>'
-            : filtSites
-                .map((s) => {
-                    const sL = attend
-                        .filter((a) => a.site_id === s.id || a.site_name === s.name)
-                        .reduce((t, a) => t + (a.pay || 0), 0);
-                    const sM = mats
-                        .filter(
-                            (m) =>
-                                (m.site_id === s.id || m.site_name === s.name) &&
-                                m.type === "In",
-                        )
-                        .reduce((t, m) => t + (m.amount || 0), 0);
-                    const sSent = cash
-                        .filter(
-                            (c) =>
-                                (c.site_id === s.id || c.site_name === s.name) &&
-                                c.type === "Money Sent",
-                        )
-                        .reduce((t, c) => t + (c.amount || 0), 0);
-                    const sExp = cash
-                        .filter(
-                            (c) =>
-                                (c.site_id === s.id || c.site_name === s.name) &&
-                                c.type === "Expense",
-                        )
-                        .reduce((t, c) => t + (c.amount || 0), 0);
-                    const sBal = sSent - sExp;
-                    const balCls = sBal >= 0 ? "sc-val-pos" : "sc-val-neg";
-                    const stBadge = sc[s.status] || "bg-gray";
-                    return `<div class="site-card">
-                <div class="site-card-head">
-                  <div class="site-card-name">${s.name}</div>
-                  <span class="badge ${stBadge}">${s.status}</span>
-                </div>
-                <div class="site-card-sup">${s.supervisor || "SUPER"}</div>
-                <div class="site-card-grid">
-                  <div class="sc-stat"><div class="sc-lbl">Labour</div><div class="sc-val">${fmt(sL)}</div></div>
-                  <div class="sc-stat"><div class="sc-lbl">Material</div><div class="sc-val">${fmt(sM)}</div></div>
-                  <div class="sc-stat"><div class="sc-lbl">Balance</div><div class="sc-val ${balCls}">${fmt(sBal)}</div></div>
-                </div>
-                <div class="site-card-row2">
-                  <div class="sc-stat"><div class="sc-lbl">Cash Sent</div><div class="sc-val">${fmt(sSent)}</div></div>
-                  <div class="sc-stat"><div class="sc-lbl">Expenses</div><div class="sc-val sc-val-neg">${fmt(sExp)}</div></div>
-                </div>
-              </div>`;
-                })
-                .join("");
+    // ── SITE-WISE COST (HORIZONTAL BARS) ──
+    const siteCostsData = filtSites.map(s => {
+        const cost = attend.filter(a => a.site_id === s.id || a.site_name === s.name).reduce((t, a) => t + (a.pay || 0), 0) +
+                     mats.filter(m => (m.site_id === s.id || m.site_name === s.name) && m.type === "In").reduce((t, m) => t + (m.amount || 0), 0);
+        return { name: s.name, cost };
+    }).sort((a,b) => b.cost - a.cost).slice(0, 5);
+    
+    const maxCost = Math.max(...siteCostsData.map(c => c.cost)) || 1;
+    const barListEl = document.getElementById("siteBarList");
+    if(barListEl) barListEl.innerHTML = siteCostsData.map(sc => {
+        const pct = Math.round((sc.cost / maxCost) * 100);
+        return `<div class="site-bar-row">
+            <div class="site-bar-info"><span>${sc.name}</span><span>${pct}%</span></div>
+            <div class="site-bar-track"><div class="site-bar-fill" style="width: ${pct}%"></div></div>
+        </div>`;
+    }).join("") || '<div style="text-align:center; padding: 20px; color: var(--muted);">No cost data yet.</div>';
+
+    // ── SITE SUMMARY TABLE ──
+    const ovTableEl = document.getElementById("ovTable");
+    if(ovTableEl) ovTableEl.innerHTML = filtSites.length === 0
+        ? '<tr><td colspan="4" style="text-align:center; padding: 40px; color: var(--muted);">No sites found.</td></tr>'
+        : filtSites.map(s => {
+            const sL = attend.filter(a => a.site_id === s.id || a.site_name === s.name).reduce((t, a) => t + (a.pay || 0), 0);
+            const sM = mats.filter(m => (m.site_id === s.id || m.site_name === s.name) && m.type === "In").reduce((t, m) => t + (m.amount || 0), 0);
+            const sSent = cash.filter(c => (c.site_id === s.id || c.site_name === s.name) && c.type === "Money Sent").reduce((t, c) => t + (c.amount || 0), 0);
+            const sExp = cash.filter(c => (c.site_id === s.id || c.site_name === s.name) && c.type === "Expense").reduce((t, c) => t + (c.amount || 0), 0);
+            const sBal = sSent - sExp;
+            return `<tr>
+                <td style="font-weight: 700; color: var(--text); padding-left: 0;">${s.name}</td>
+                <td>${fmt(sL)}</td>
+                <td>${fmt(sM)}</td>
+                <td style="color: ${sBal >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 700; text-align: right;">${fmt(sBal)}</td>
+            </tr>`;
+        }).join("");
 
     // ── Trend Chart — last 7 days (filtered) ──
     const days = [];
@@ -1335,45 +1365,23 @@ async function renderOverview() {
             },
         },
     );
-
-    // ── Site Bar Chart (filtered sites) ──
-    const siteCosts = filtSites.map((s) => ({
-        name: s.name,
-        cost: attend
-            .filter((a) => a.site_id === s.id || a.site_name === s.name)
-            .reduce((t, a) => t + (a.pay || 0), 0),
-    }));
-    if (siteChart2) siteChart2.destroy();
-    siteChart2 = new Chart(
-        document.getElementById("siteChart").getContext("2d"),
-        {
-            type: "bar",
-            data: {
-                labels: siteCosts.map((s) => s.name),
-                datasets: [
-                    {
-                        label: "Labour Cost",
-                        data: siteCosts.map((s) => s.cost),
-                        backgroundColor: "#f97316",
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } },
-            },
-        },
-    );
 }
 
 // ════════════ RENDER LABOUR ════════════
+function setLabStatus(status) {
+    document.getElementById('labStatus').value = status;
+    document.querySelectorAll('#labStatusGroup .pill').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim() === (status || 'All'));
+    });
+    renderLabour();
+}
+
 async function renderLabour() {
     const date = document.getElementById("labDate").value,
         site = document.getElementById("labSite").value;
     const des = document.getElementById("labDes").value,
-        search = document.getElementById("labSearch").value.toLowerCase();
+        search = document.getElementById("labSearch").value.toLowerCase(),
+        statusFilter = document.getElementById("labStatus")?.value;
     let E = await dbGet("attendance");
     if (date) E = E.filter((e) => e.date === date);
     if (site) {
@@ -1396,10 +1404,14 @@ async function renderLabour() {
         E = E.filter((e) =>
             (e.worker_name || "").toLowerCase().includes(search),
         );
-    E.sort((a, b) => b.date.localeCompare(a.date));
-    const total = E.reduce((s, e) => s + (e.pay || 0), 0);
+    if (statusFilter) E = E.filter(e => e.status === statusFilter);
+    E.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const total = E.reduce((s, e) => s + (+e.pay || 0), 0);
     const p = E.filter((e) => e.status === "Present").length;
     document.getElementById("labTotalPay").textContent = fmtF(total);
+    const labTotFoot = document.getElementById("labTotalPayFoot");
+    if (labTotFoot) labTotFoot.textContent = fmtF(total);
+    
     document.getElementById("labP").textContent = p;
     document.getElementById("labH").textContent = E.filter(
         (e) => e.status === "Half Day",
@@ -1407,10 +1419,9 @@ async function renderLabour() {
     document.getElementById("labA").textContent = E.filter(
         (e) => e.status === "Absent",
     ).length;
-    document.getElementById("labL").textContent = E.filter(
-        (e) => e.status === "Leave",
-    ).length;
-    document.getElementById("labPresCount").textContent = p + " Present";
+    
+    const countEl = document.getElementById("labCount");
+    if (countEl) countEl.textContent = E.length + " records";
     const dB = {
         Mason: "bg-blue",
         Labour: "bg-gray",
@@ -1426,18 +1437,48 @@ async function renderLabour() {
     };
     const canEdit = can("canEditAttendance"),
         canDel = can("canDeleteAttendance");
-    document.getElementById("labTable").innerHTML =
-        E.map(
-            (e) => `<tr>
-    <td><div class="wc"><div class="wav" style="background:${strCol(e.worker_name)}">${(e.worker_name || "?")[0].toUpperCase()}</div><strong>${e.worker_name || ""}</strong></div></td>
-    <td><span class="badge ${dB[e.designation] || "bg-gray"}">${e.designation || ""}</span></td>
-    <td>${e.gender || ""}</td><td>${e.site_name || ""}</td><td>${e.date || ""}</td>
-    <td><span class="badge ${sB[e.status] || "bg-gray"}">${e.status || ""}</span></td>
-    <td>${e.hours || "–"}</td><td>${fmtF(e.wage)}</td><td><strong style="color:var(--primary)">${fmtF(e.pay)}</strong></td><td>${e.remarks || "–"}</td>
-    <td style="white-space:nowrap">${canEdit ? `<button class="btn-sm-edit" onclick="editAttendance('${e.id}')">✏️</button>` : ""}${canDel ? `<button class="btn-sm-danger" onclick="deleteAttendance('${e.id}')">🗑</button>` : ""}</td>
-  </tr>`,
-        ).join("") ||
-        '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:20px">No records. Click "+ Add Attendance".</td></tr>';
+
+    const cardsHtml = E.map((e) => {
+        return `<div class="labour-accordion card" style="padding: 0; margin-bottom: 12px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border-light);">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; background: var(--bg-card); transition: 0.2s;" onclick="toggleAccordion('labacc-${e.id}')">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="wav" style="width:42px; height:42px; font-size:18px; background:${strCol(e.worker_name)}; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink:0;">${(e.worker_name || "?")[0].toUpperCase()}</div>
+                    <div>
+                        <h4 style="margin:0; font-size: 15px; font-weight: 800; color: var(--text);">${e.worker_name || ""}</h4>
+                        <p style="margin:0; font-size: 11.5px; color: var(--muted);">${e.designation || ""} • ${e.site_name || ""}</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 24px;">
+                    <div style="text-align: right;">
+                        <strong style="color: var(--text); font-size: 14px;">${fmtF(e.pay)}</strong>
+                        <div style="font-size: 10.5px; color: var(--muted); text-transform: uppercase;">Pay</div>
+                    </div>
+                    <span class="badge ${sB[e.status] || "bg-gray"}">${e.status || ""}</span>
+                    <div style="color: var(--muted); font-size: 12px;">▼</div>
+                </div>
+            </div>
+            <div id="labacc-${e.id}" style="display: none; border-top: 1px solid var(--border-light); padding: 16px; background: var(--bg);">
+                <div class="g2" style="margin-bottom: 12px;">
+                    <div style="background: var(--bg-card); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
+                        <div style="font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px;">DETAILS</div>
+                        <p style="margin:0 0 4px 0; font-size: 13px; color: var(--text-2);">Hours: <strong style="color: var(--text)">${e.hours || "–"}</strong></p>
+                        <p style="margin:0; font-size: 13px; color: var(--text-2);">Wage/Day: <strong style="color: var(--text)">${fmt(e.wage || 0)}</strong></p>
+                    </div>
+                    <div style="background: var(--bg-card); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
+                        <div style="font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px;">NOTES</div>
+                        <p style="margin:0; font-size: 13px; color: var(--text-2); overflow-wrap: break-word;">${e.remarks || "No remarks"}</p>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                    ${canEdit ? `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 10px;" onclick="editAttendance('${e.id}')">✏️ Edit</button>` : ""}
+                    ${canDel ? `<button class="btn btn-outline" style="font-size: 11px; padding: 4px 10px; color: var(--danger); border-color: rgba(244,63,94,0.2);" onclick="deleteAttendance('${e.id}')">🗑 Delete</button>` : ""}
+                </div>
+            </div>
+        </div>`;
+    }).join("");
+
+    const container = document.getElementById("labCardsContainer");
+    if (container) container.innerHTML = cardsHtml || '<div style="text-align:center; padding: 40px; color: var(--muted);">No records found.</div>';
 
     // Doughnut chart
     const sites = await dbGet("sites"),
@@ -1501,6 +1542,7 @@ async function renderMaterials() {
         );
     if (type) E = E.filter((e) => e.type === type);
     if (date) E = E.filter((e) => e.date === date);
+    E.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     if (search)
         E = E.filter(
             (e) =>
@@ -1523,49 +1565,56 @@ async function renderMaterials() {
     document.getElementById("matOutCnt").textContent = E.filter(
         (e) => e.type === "Out",
     ).length;
+    
     const canEdit = can("canEditMatEntry"),
         canDel = can("canDeleteMatEntry");
+    
     document.getElementById("matTable").innerHTML =
         E.map(
             (e) => `<tr>
-    <td>${e.date || ""}</td><td>${e.site_name || ""}</td>
+    <td>${e.date || ""}</td>
+    <td><strong>${e.material_name || ""}</strong></td>
+    <td>${e.site_name || ""}</td>
     <td><span class="badge ${e.type === "In" ? "bg-green" : "bg-orange"}">${e.type}</span></td>
-    <td><strong>${e.material_name || ""}</strong></td><td>${e.qty || 0}</td><td>${e.unit || ""}</td>
-    <td>${fmtF(e.rate)}</td><td><strong>${fmtF(e.amount)}</strong></td><td>${e.party || ""}</td>
-    <td style="white-space:nowrap">${canEdit ? `<button class="btn-sm-edit" onclick="editMatEntry('${e.id}')">✏️</button>` : ""}${canDel ? `<button class="btn-sm-danger" onclick="deleteMatEntry('${e.id}')">🗑</button>` : ""}</td>
+    <td>${e.qty || 0} ${e.unit || ""}</td>
+    <td><strong>${fmtF(e.amount)}</strong></td>
+    <td style="text-align:right;white-space:nowrap">
+        ${canEdit ? `<button class="btn-sm-edit" onclick="editMatEntry('${e.id}')">✏️</button>` : ""}
+        ${canDel ? `<button class="btn-sm-danger" onclick="deleteMatEntry('${e.id}')">🗑</button>` : ""}
+    </td>
   </tr>`,
         ).join("") ||
-        '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px">No entries.</td></tr>';
+        '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No entries matching filter.</td></tr>';
 
-    // Stock summary — filtered by selected site
+    // Stock summary — premium progress bars
     let allE = await dbGet("material_entries");
     if (site) {
-        const _sn = (
-            document.getElementById("matSite")?.options[
-                document.getElementById("matSite")?.selectedIndex
-            ]?.text || ""
-        ).trim();
-        allE = allE.filter(
-            (e) =>
-                e.site_id === site || (e.site_name && e.site_name.trim() === _sn),
-        );
+        const _sn = (document.getElementById("matSite")?.options[document.getElementById("matSite")?.selectedIndex]?.text || "").trim();
+        allE = allE.filter(e => e.site_id === site || (e.site_name && e.site_name.trim() === _sn));
     }
     const mMast = await dbGet("materials_master");
+    
+    // Sort materials by net stock descending for "Top Materials"
+    const stockData = mMast.map(m => {
+        const inQ = allE.filter(e => e.material_id === m.id && e.type === "In").reduce((s, e) => s + (e.qty || 0), 0);
+        const outQ = allE.filter(e => e.material_id === m.id && e.type === "Out").reduce((s, e) => s + (e.qty || 0), 0);
+        const net = inQ - outQ;
+        const pct = inQ > 0 ? Math.min(100, Math.max(0, Math.round((net / inQ) * 100))) : 0;
+        return { name: m.name, net, unit: m.unit, pct };
+    }).sort((a, b) => b.net - a.net);
+
     document.getElementById("stockList").innerHTML =
-        mMast
-            .map((m) => {
-                const inQ = allE
-                    .filter((e) => e.material_id === m.id && e.type === "In")
-                    .reduce((s, e) => s + (e.qty || 0), 0);
-                const outQ = allE
-                    .filter((e) => e.material_id === m.id && e.type === "Out")
-                    .reduce((s, e) => s + (e.qty || 0), 0);
-                const net = inQ - outQ;
-                const pct = inQ > 0 ? Math.round((net / inQ) * 100) : 0;
-                return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><strong>${m.name}</strong></span><span>${net} ${m.unit}</span></div><div style="background:#f1f5f9;border-radius:4px;height:6px"><div style="background:var(--primary);width:${pct}%;height:100%;border-radius:4px"></div></div></div>`;
-            })
-            .join("") ||
-        '<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px">No materials.</p>';
+        stockData.map(s => `
+            <div class="stock-item" style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-weight:600;font-size:13px;color:var(--text)">${s.name}</span>
+                    <span style="font-size:12px;color:var(--muted)">${s.net} ${s.unit}</span>
+                </div>
+                <div class="progress-track" style="background:var(--bg-input);border-radius:10px;height:8px;position:relative;overflow:hidden;border:1px solid var(--border-light)">
+                    <div class="progress-fill" style="width:${s.pct}%;height:100%;background:linear-gradient(90deg, #3b82f6, #2563eb);border-radius:10px;transition:width 0.5s ease;"></div>
+                </div>
+            </div>
+        `).join("") || '<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px">No stock data.</p>';
 }
 
 // ════════════ RENDER CASHBOOK ════════════
@@ -1576,53 +1625,78 @@ async function renderCash() {
         from = document.getElementById("cashFrom").value;
     const to = document.getElementById("cashTo").value,
         search = document.getElementById("cashSearch").value.toLowerCase();
-    let E = await dbGet("cashbook");
+    
+    // Fetch both tables
+    const [E, M] = await Promise.all([
+        dbGet("cashbook"),
+        dbGet("material_entries")
+    ]);
+
+    let filtCash = E;
+    let filtMat = M;
+
     if (site) {
         const _sName = (
             document.getElementById("cashSite")?.options[
                 document.getElementById("cashSite")?.selectedIndex
             ]?.text || ""
         ).trim();
-        E = E.filter(
+        filtCash = filtCash.filter(
+            (e) =>
+                e.site_id === site ||
+                (e.site_name && e.site_name.trim() === _sName),
+        );
+        filtMat = filtMat.filter(
             (e) =>
                 e.site_id === site ||
                 (e.site_name && e.site_name.trim() === _sName),
         );
     }
-    if (type) E = E.filter((e) => e.type === type);
-    if (head) E = E.filter((e) => e.head === head);
-    if (from) E = E.filter((e) => e.date >= from);
-    if (to) E = E.filter((e) => e.date <= to);
+    // ... filtering filtCash (E) ...
+    if (type) filtCash = filtCash.filter((e) => e.type === type);
+    if (head) filtCash = filtCash.filter((e) => e.head === head);
+    if (from) filtCash = filtCash.filter((e) => e.date >= from);
+    if (to) filtCash = filtCash.filter((e) => e.date <= to);
     if (search)
-        E = E.filter(
+        filtCash = filtCash.filter(
             (e) =>
                 (e.site_name || "").toLowerCase().includes(search) ||
                 (e.party || "").toLowerCase().includes(search),
         );
-    E.sort((a, b) => b.date.localeCompare(a.date));
-    const sent = E.filter((e) => e.type === "Money Sent").reduce(
+    
+    // Date filtering for Materials too in Cashbook
+    if (from) filtMat = filtMat.filter((e) => e.date >= from);
+    if (to) filtMat = filtMat.filter((e) => e.date <= to);
+
+    filtCash.sort((a, b) => b.date.localeCompare(a.date));
+    
+    const sent = filtCash.filter((e) => e.type === "Money Sent").reduce(
         (s, e) => s + (e.amount || 0),
         0,
     );
-    const exp = E.filter((e) => e.type === "Expense").reduce(
+    const exp = filtCash.filter((e) => e.type === "Expense").reduce(
         (s, e) => s + (e.amount || 0),
         0,
     );
+    
+    // Aggregate material purchases manually
+    const matPurchased = filtMat.filter(e => e.type === "In").reduce((s, e) => s + (e.amount || 0), 0);
+
     document.getElementById("cashSent").textContent = fmtF(sent);
     document.getElementById("cashExp").textContent = fmtF(exp);
     document.getElementById("cashBal").textContent = fmtF(sent - exp);
     document.getElementById("cashLabPaid").textContent = fmtF(
-        E.filter((e) => e.head === "Labour Payment").reduce(
+        filtCash.filter((e) => e.head === "Labour Payment").reduce(
             (s, e) => s + (e.amount || 0),
             0,
         ),
     );
-    document.getElementById("cashMatBought").textContent = fmtF(
-        E.filter((e) => e.head === "Material Purchase").reduce(
-            (s, e) => s + (e.amount || 0),
-            0,
-        ),
+    // Combine cashbook "Material Purchase" records with the actual material entry totals
+    const explicitMatCash = filtCash.filter((e) => e.head === "Material Purchase").reduce(
+        (s, e) => s + (e.amount || 0),
+        0,
     );
+    document.getElementById("cashMatBought").textContent = fmtF(matPurchased + explicitMatCash);
     const canEdit = can("canEditCash"),
         canDel = can("canDeleteCash");
     document.getElementById("cashTable").innerHTML =
@@ -1644,107 +1718,376 @@ async function renderCash() {
     document.getElementById("cashSiteTable").innerHTML =
         sites
             .map((s) => {
-                const sS = allC
-                    .filter((c) => c.site_id === s.id && c.type === "Money Sent")
-                    .reduce((t, c) => t + (c.amount || 0), 0);
-                const sE = allC
-                    .filter((c) => c.site_id === s.id && c.type === "Expense")
-                    .reduce((t, c) => t + (c.amount || 0), 0);
+                const sS = allC.filter((c) => c.site_id === s.id && c.type === "Money Sent").reduce((t, c) => t + (c.amount || 0), 0);
+                const sE = allC.filter((c) => c.site_id === s.id && c.type === "Expense").reduce((t, c) => t + (c.amount || 0), 0);
                 const sB = sS - sE;
                 return `<tr><td><strong>${s.name}</strong></td><td style="color:var(--success)">${fmtF(sS)}</td><td style="color:var(--danger)">${fmtF(sE)}</td><td style="color:${sB >= 0 ? "var(--success)" : "var(--danger)"}">${fmtF(sB)}</td></tr>`;
             })
             .join("") ||
-        '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No sites.</td></tr>';
+        '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No sites found.</td></tr>';
 }
 
-// ════════════ RENDER MASTERS ════════════
-async function renderSites(q = "") {
+async function renderSites() {
     let S = await dbGet("sites");
-    if (q)
-        S = S.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
-    const sc = {
-        Active: "bg-green",
-        Completed: "bg-gray",
-        "On Hold": "bg-orange",
-    };
-    const canEdit = can("canEditSite"),
-        canDel = can("canDeleteSite");
-    document.getElementById("sitesTable").innerHTML =
-        S.map(
-            (s, i) => `<tr>
-    <td>${String(i + 1).padStart(3, "0")}</td><td><strong>${s.name}</strong></td><td>${s.addr || ""}</td>
-    <td>${s.start_date || ""}</td><td>${s.supervisor || "–"}</td>
-    <td style="font-size:11px;color:var(--muted)">${Array.isArray(s.engineerids) && s.engineerids.length > 0 ? s.engineerids.length + " assigned" : "–"}</td>
-    <td>${s.phone || ""}</td>
-    <td><span class="badge ${sc[s.status] || "bg-gray"}">${s.status}</span></td>
-    <td style="white-space:nowrap">${canEdit ? `<button class="btn-sm-edit" onclick="editSite('${s.id}')">Edit</button>` : ""}${canDel ? `<button class="btn-sm-danger" onclick="deleteSite('${s.id}')">Delete</button>` : ""}</td>
-  </tr>`,
-        ).join("") ||
-        '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No sites. Click "Add Site".</td></tr>';
+    const q = document.getElementById("siteSearchInp")?.value.toLowerCase() || "";
+    const filterStatus = document.getElementById("siteStatusFilt")?.value || "";
+    
+    if (q) S = S.filter((s) => s.name.toLowerCase().includes(q));
+    if (filterStatus) S = S.filter((s) => s.status === filterStatus);
+
+    const [attend, mats, cash, workers] = await Promise.all([
+        dbGet("attendance"),
+        dbGet("material_entries"),
+        dbGet("cashbook"),
+        dbGet("workers")
+    ]);
+
+    const sc = { Active: "bg-green", Completed: "bg-gray", "On Hold": "bg-orange" };
+    const canEdit = can("canEditSite");
+
+    let totL = 0, totM = 0, totBal = 0;
+    const cardsHtml = S.map((s) => {
+        const sL = attend.filter(a => a.site_id === s.id || a.site_name === s.name).reduce((t, a) => t + (a.pay || 0), 0);
+        const sM = mats.filter(m => (m.site_id === s.id || m.site_name === s.name) && m.type === "In").reduce((t, m) => t + (m.amount || 0), 0);
+        const sSent = cash.filter(c => (c.site_id === s.id || c.site_name === s.name) && c.type === "Money Sent").reduce((t, c) => t + (c.amount || 0), 0);
+        const sExp = cash.filter(c => (c.site_id === s.id || c.site_name === s.name) && c.type === "Expense").reduce((t, c) => t + (c.amount || 0), 0);
+        const sBal = sSent - sExp;
+        
+        totL += sL;
+        totM += sM;
+        totBal += sBal;
+
+        const wCount = workers.filter(w => w.site_id === s.id).length;
+        const engs = (s.engineerids || []).length;
+        const engStr = engs ? `${engs} Engineer(s)` : "None";
+        const pct = sL+sM > 0 ? Math.min(100, Math.round(((sL+sM) / (sL+sM+Math.abs(sBal)+1)) * 100)) : 15;
+
+        return `<div class="site-accordion card" style="padding: 0; margin-bottom: 12px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border-light);">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; background: var(--bg-card); transition: 0.2s;" onclick="toggleAccordion('siteacc-${s.id}')">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width:42px; height:42px; font-size:20px; background: var(--info-bg); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink:0;">🏗️</div>
+                    <div>
+                        <h4 style="margin:0; font-size: 15px; font-weight: 800; color: var(--text);">${s.name}</h4>
+                        <p style="margin:0; font-size: 11.5px; color: var(--muted);">📍 ${s.addr || "No location"}</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 24px;">
+                    <div style="text-align: right;">
+                        <strong style="color: ${sBal>=0?'var(--success)':'var(--danger)'}; font-size: 14px;">${sBal<0?'-':''}${fmt(Math.abs(sBal))}</strong>
+                        <div style="font-size: 10.5px; color: var(--muted); text-transform: uppercase;">Balance</div>
+                    </div>
+                    <div style="width: 80px;" class="desk-only">
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px; color: var(--primary); font-weight:700;">
+                            <span>Progress</span><span>${pct}%</span>
+                        </div>
+                        <div style="background: var(--border-light); height: 4px; border-radius: 2px;">
+                            <div style="background: var(--primary); height: 100%; width: ${pct}%; border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                    <span class="badge ${sc[s.status] || "bg-gray"}">${s.status}</span>
+                    <div style="color: var(--muted); font-size: 12px;">▼</div>
+                </div>
+            </div>
+            <div id="siteacc-${s.id}" style="display: none; border-top: 1px solid var(--border-light); padding: 16px; background: var(--bg);">
+                <div class="g2" style="margin-bottom: 16px;">
+                    <div style="background: var(--bg-card); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                        <div style="font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 12px; letter-spacing: 0.5px;">TEAM</div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>
+                                <p style="margin:0 0 6px 0; font-size: 13px; color: var(--text-2);">Supervisor: <strong style="color: var(--text)">${s.supervisor || "–"}</strong></p>
+                                <p style="margin:0; font-size: 13px; color: var(--text-2);">Engineers: <strong style="color: var(--text)">${engStr}</strong></p>
+                            </div>
+                            <div style="text-align: right; font-size: 12px; color: var(--muted);">👥 ${wCount} workers</div>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-card); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                        <div style="font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 12px; letter-spacing: 0.5px;">TIMELINE</div>
+                        <p style="margin:0 0 6px 0; font-size: 13px; color: var(--text-2);">📅 Start: <strong style="color: var(--text)">${s.start_date || "–"}</strong></p>
+                        <p style="margin:0; font-size: 13px; color: var(--text-2);">🎯 End: <strong style="color: var(--text)">${s.end_date || "–"}</strong></p>
+                    </div>
+                </div>
+                <div class="g3" style="gap: 12px;">
+                    <div style="background: var(--info-bg); border-radius: 8px; padding: 16px; text-align: center;">
+                        <div style="font-size: 18px; margin-bottom: 6px;">👷</div>
+                        <strong style="font-size: 16px; display: block; color: var(--info);">${fmt(sL)}</strong>
+                        <div style="font-size: 11px; margin-bottom: 12px; color: var(--info);">Labour Cost</div>
+                        <button class="btn btn-primary" style="width: 100%; background: var(--info); box-shadow:none;" onclick="document.getElementById('gSite').value='${s.id}'; syncGlobalSite(); showPage('labour', document.getElementById('navLabour'))">View Attendance</button>
+                    </div>
+                    <div style="background: var(--warning-bg); border-radius: 8px; padding: 16px; text-align: center;">
+                        <div style="font-size: 18px; margin-bottom: 6px;">🧱</div>
+                        <strong style="font-size: 16px; display: block; color: var(--warning);">${fmt(sM)}</strong>
+                        <div style="font-size: 11px; margin-bottom: 12px; color: var(--warning);">Material Cost</div>
+                        <button class="btn btn-primary" style="width: 100%; background: var(--warning); box-shadow:none;" onclick="document.getElementById('gSite').value='${s.id}'; syncGlobalSite(); showPage('materials', document.getElementById('navMaterials'))">View Materials</button>
+                    </div>
+                    <div style="background: var(--success-bg); border-radius: 8px; padding: 16px; text-align: center;">
+                        <div style="font-size: 18px; margin-bottom: 6px;">💰</div>
+                        <strong style="font-size: 16px; display: block; color: var(--success);">${fmt(sBal)}</strong>
+                        <div style="font-size: 11px; margin-bottom: 12px; color: var(--success);">Balance</div>
+                        <button class="btn btn-primary" style="width: 100%; background: var(--success); box-shadow:none;" onclick="document.getElementById('gSite').value='${s.id}'; syncGlobalSite(); showPage('cashbook', document.getElementById('navCashbook'))">View Cashbook</button>
+                    </div>
+                </div>
+                ${canEdit ? `<div style="text-align: right; margin-top: 12px;"><button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px;" onclick="editSite('${s.id}')">✏️ Edit Site</button></div>` : ''}
+            </div>
+        </div>`;
+    }).join("");
+
+    const container = document.getElementById("sitesAccordionContainer");
+    if (container) container.innerHTML = cardsHtml || '<div style="text-align:center; padding: 40px; color: var(--muted);">No sites found.</div>';
+
+    // Update inline metrics
+    const cActiveWork = workers.filter(w => w.status === 'Active').length;
+    const elts = { tsCount: S.length, twCount: cActiveWork, tlCost: fmtF(totL), tmCost: fmtF(totM), tnBal: fmtF(totBal) };
+    for (let k in elts) {
+        if (document.getElementById(k)) document.getElementById(k).textContent = elts[k];
+    }
 }
+
+let workerViewMode = "list"; // "list" or "grid"
+
 async function renderWorkers(q = "") {
     let W = await dbGet("workers");
     const fSite = document.getElementById("wfSite")?.value || "";
     const fDes = document.getElementById("wfDes")?.value || "";
-    if (q)
-        W = W.filter((w) => w.name.toLowerCase().includes(q.toLowerCase()));
+    const fStatus = document.getElementById("wfStatus")?.value || "";
+    const searchVal = document.getElementById("workerSearchInp")?.value || "";
+    const sortVal = document.getElementById("wfSort")?.value || "name-asc";
+
+    // Filtering
+    if (searchVal) W = W.filter((w) => (w.name || "").toLowerCase().includes(searchVal.toLowerCase()));
     if (fSite) W = W.filter((w) => w.site_id === fSite);
     if (fDes) W = W.filter((w) => w.designation === fDes);
+    if (fStatus) W = W.filter((w) => w.status === fStatus);
+
+    // Sorting
+    switch (sortVal) {
+        case "name-asc":
+            W.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+            break;
+        case "name-desc":
+            W.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+            break;
+        case "wage-high":
+            W.sort((a, b) => (b.daily_wage || 0) - (a.daily_wage || 0));
+            break;
+        case "wage-low":
+            W.sort((a, b) => (a.daily_wage || 0) - (b.daily_wage || 0));
+            break;
+        case "recent":
+            W.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+            break;
+    }
+
     const canEdit = can("canEditWorker"),
         canDel = can("canDeleteWorker");
     const sites = await dbGet("sites");
-    document.getElementById("workersTable").innerHTML =
-        W.map((w) => {
-            const sName = sites.find((s) => s.id === w.site_id)?.name || "–";
-            return `<tr>
-      <td><div class="wc"><div class="wav" style="background:${strCol(w.name)}">${w.name[0].toUpperCase()}</div><strong>${w.name}</strong></div></td>
-      <td>${w.designation || ""}</td><td>${w.gender || ""}</td><td>${sName}</td>
-      <td>${fmtF(w.daily_wage)}</td><td>${w.phone || ""}</td>
-      <td><span class="badge ${w.status === "Active" ? "bg-green" : "bg-red"}">${w.status}</span></td>
-      <td style="white-space:nowrap">${canEdit ? `<button class="btn-sm-edit" onclick="editWorker('${w.id}')">Edit</button>` : ""}${canDel ? `<button class="btn-sm-danger" onclick="deleteWorker('${w.id}')">Delete</button>` : ""}</td>
-    </tr>`;
-        }).join("") ||
-        '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No workers. Click "Add Worker".</td></tr>';
-}
-async function renderMatMaster(q = "") {
-    let M = await dbGet("materials_master");
-    if (q)
-        M = M.filter((m) => m.name.toLowerCase().includes(q.toLowerCase()));
-    const cB = {
-        Cement: "bg-gray",
-        Sand: "bg-orange",
-        Aggregate: "bg-gray",
-        Steel: "bg-blue",
-        Bricks: "bg-red",
+
+    // Designation badge color map
+    const desBadge = {
+        Mason: "des-blue",
+        Labour: "des-red",
+        Helper: "des-pink",
+        Carpenter: "des-green",
+        Barbender: "des-purple",
     };
-    const canEdit = can("canEditMaterial"),
-        canDel = can("canDeleteMaterial");
-    document.getElementById("matMasterTable").innerHTML =
-        M.map(
-            (m, i) => `<tr>
-    <td>${String(i + 1).padStart(3, "0")}</td><td><strong>${m.name}</strong></td>
-    <td><span class="badge ${cB[m.category] || "bg-gray"}">${m.category || ""}</span></td>
-    <td>${m.unit || ""}</td><td>${fmtF(m.default_rate || 0)} / ${m.unit || "unit"}</td>
-    <td><span class="badge ${m.status === "Active" ? "bg-green" : "bg-red"}">${m.status}</span></td>
-    <td style="white-space:nowrap">${canEdit ? `<button class="btn-sm-edit" onclick="editMatMaster('${m.id}')">Edit</button>` : ""}${canDel ? `<button class="btn-sm-danger" onclick="deleteMatMaster('${m.id}')">Delete</button>` : ""}</td>
-  </tr>`,
-        ).join("") ||
-        '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No materials.</td></tr>';
+
+    // Helper: initials (2 letters)
+    function getInitials(name) {
+        const parts = (name || "?").trim().split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return (parts[0] || "?").substring(0, 2).toUpperCase();
+    }
+
+    // ═══ LIST VIEW (Table) ═══
+    const tableHtml = W.map((w) => {
+        const sName = sites.find((s) => s.id === w.site_id)?.name || "–";
+        const joinedDate = w.created_at
+            ? new Date(w.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+            : "–";
+        const phoneNum = w.phone || "";
+        const desClass = desBadge[w.designation] || "des-gray";
+
+        return `<tr class="wt-row">
+            <td class="wt-check"><input type="checkbox" class="worker-row-check" value="${w.id}" onclick="event.stopPropagation()" /></td>
+            <td>
+                <div class="wt-worker-cell">
+                    <div class="wt-avatar" style="background: ${strCol(w.name)}">${getInitials(w.name)}</div>
+                    <div class="wt-worker-info">
+                        <div class="wt-worker-name">${w.name || ""}</div>
+                        <div class="wt-worker-phone">${phoneNum || "–"}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="wt-des-badge ${desClass}">${w.designation || "–"}</span></td>
+            <td class="wt-site-cell">${sName}</td>
+            <td>${w.gender || "–"}</td>
+            <td class="wt-wage-cell">₹${w.daily_wage || 0}</td>
+            <td class="wt-date-cell">${joinedDate}</td>
+            <td><span class="wt-status-badge ${w.status === "Active" ? "wt-active" : "wt-inactive"}">${w.status || "Active"}</span></td>
+            <td class="wt-action-cell">
+                <div class="wt-action-wrapper">
+                    <button class="wt-action-btn" onclick="event.stopPropagation(); toggleWorkerActionMenu('wt-menu-${w.id}')">⋮</button>
+                    <div class="wt-action-menu" id="wt-menu-${w.id}">
+                        ${canEdit ? `<button onclick="event.stopPropagation(); editWorker('${w.id}'); closeAllWorkerMenus()">✏️ Edit</button>` : ""}
+                        ${canDel ? `<button class="wt-delete-action" onclick="event.stopPropagation(); deleteWorker('${w.id}'); closeAllWorkerMenus()">🗑 Delete</button>` : ""}
+                    </div>
+                </div>
+            </td>
+        </tr>`;
+    }).join("");
+
+    const tbody = document.getElementById("workersTableBody");
+    if (tbody) {
+        tbody.innerHTML = tableHtml || `<tr><td colspan="9" style="text-align:center; padding: 60px 20px; color: var(--muted);">No workers found.</td></tr>`;
+    }
+
+    // ═══ GRID VIEW (Cards) ═══
+    const gridHtml = W.map((w) => {
+        const sName = sites.find((s) => s.id === w.site_id)?.name || "–";
+        const desClass = desBadge[w.designation] || "des-gray";
+        const phoneNum = w.phone || "–";
+
+        return `<div class="wg-card">
+            <div class="wg-card-header">
+                <div class="wg-card-left">
+                    <div class="wg-avatar" style="background: ${strCol(w.name)}">${getInitials(w.name)}</div>
+                    <div class="wg-name-block">
+                        <div class="wg-name">${w.name || ""}</div>
+                        <span class="wt-des-badge ${desClass}">${w.designation || "–"}</span>
+                    </div>
+                </div>
+                <span class="wt-status-badge ${w.status === "Active" ? "wt-active" : "wt-inactive"}">${w.status || "Active"}</span>
+            </div>
+            <div class="wg-card-body">
+                <div class="wg-info-row"><span class="wg-info-icon">📍</span><span class="wg-info-text">${sName}</span></div>
+                <div class="wg-info-row"><span class="wg-info-icon">📞</span><span class="wg-info-text">${phoneNum}</span></div>
+            </div>
+            <div class="wg-card-footer">
+                <span class="wg-wage-label">Wage/day</span>
+                <span class="wg-wage-value">₹${w.daily_wage || 0}</span>
+            </div>
+            ${(canEdit || canDel) ? `<div class="wg-card-actions">
+                ${canEdit ? `<button class="wg-action-btn" onclick="editWorker('${w.id}')">✏️</button>` : ""}
+                ${canDel ? `<button class="wg-action-btn wg-delete" onclick="deleteWorker('${w.id}')">🗑</button>` : ""}
+            </div>` : ""}
+        </div>`;
+    }).join("");
+
+    const gridContainer = document.getElementById("workersGridView");
+    if (gridContainer) {
+        gridContainer.innerHTML = gridHtml || '<div style="text-align:center; padding: 60px 20px; color: var(--muted); grid-column: 1/-1;">No workers found.</div>';
+    }
+
+    // Apply current view mode
+    applyWorkerViewMode();
 }
+
+// Toggle between list and grid views
+function setWorkerView(view) {
+    workerViewMode = view;
+    document.getElementById("workerViewList")?.classList.toggle("active", view === "list");
+    document.getElementById("workerViewGrid")?.classList.toggle("active", view === "grid");
+    applyWorkerViewMode();
+}
+
+function applyWorkerViewMode() {
+    const listView = document.getElementById("workersListView");
+    const gridView = document.getElementById("workersGridView");
+    if (listView) listView.style.display = workerViewMode === "list" ? "block" : "none";
+    if (gridView) gridView.style.display = workerViewMode === "grid" ? "grid" : "none";
+}
+
+function toggleAllWorkerChecks(masterCheckbox) {
+    document.querySelectorAll(".worker-row-check").forEach((cb) => {
+        cb.checked = masterCheckbox.checked;
+    });
+}
+
+function toggleWorkerActionMenu(menuId) {
+    closeAllWorkerMenus();
+    const menu = document.getElementById(menuId);
+    if (menu) menu.classList.toggle("open");
+}
+
+function closeAllWorkerMenus() {
+    document.querySelectorAll(".wt-action-menu").forEach((m) => m.classList.remove("open"));
+}
+
+function toggleWorkerRowMenu(event, id) {
+    if (event.target.closest('.wt-action-wrapper') || event.target.closest('.wt-check')) return;
+}
+
+// ═══ EXCEL EXPORT using SheetJS ═══
+async function exportWorkers() {
+    const workers = await dbGet("workers");
+    const sites = await dbGet("sites");
+
+    // Build rows with proper headers
+    const data = workers.map((w, i) => {
+        const sName = sites.find((s) => s.id === w.site_id)?.name || "";
+        const joined = w.created_at
+            ? new Date(w.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+            : "";
+        return {
+            "S.No": i + 1,
+            "Worker Name": w.name || "",
+            "Phone": w.phone || "",
+            "Designation": w.designation || "",
+            "Gender": w.gender || "",
+            "Daily Wage (₹)": w.daily_wage || 0,
+            "Assigned Site": sName,
+            "Status": w.status || "",
+            "Date Joined": joined,
+        };
+    });
+
+    // Create workbook & worksheet
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Auto-fit column widths
+    const colWidths = Object.keys(data[0] || {}).map((key) => {
+        const maxLen = Math.max(
+            key.length,
+            ...data.map((row) => String(row[key] || "").length)
+        );
+        return { wch: Math.min(maxLen + 3, 30) };
+    });
+    ws["!cols"] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Workers");
+
+    // Generate and autodownload directly
+    XLSX.writeFile(wb, "Workers-" + getToday() + ".xlsx");
+    toast("Workers exported as Excel!");
+}
+
+// Close menus on outside click
+document.addEventListener("click", function (e) {
+    if (!e.target.closest(".wt-action-wrapper")) {
+        closeAllWorkerMenus();
+    }
+});
+
+
 
 // ── NAVIGATION ──
 // ── GLOBAL SITE SYNC ──
-function syncGlobalSite() {
-    const val = document.getElementById("gSite").value;
-    // Push to all page-level site dropdowns
-    ["labSite", "matSite", "cashSite", "wfSite"].forEach((id) => {
+function syncGlobalSite(sourceId) {
+    const val = document.getElementById(sourceId).value;
+    // Push periodically to all page-level site dropdowns for persistence
+    ["gSite", "labSite", "matSite", "cashSite", "wfSite"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.value = val;
     });
+    renderAll();
+}
+
+function renderAll() {
     renderOverview();
     renderLabour();
     renderMaterials();
     renderCash();
+    renderSites();
     renderWorkers();
 }
 
@@ -1763,11 +2106,12 @@ function showPage(id, el) {
         labour: "Labour",
         materials: "Materials",
         cashbook: "Cashbook",
-        masters: "Masters",
+        sites: "Sites",
+        workers: "Workers",
     };
-    document.getElementById("pgT").textContent = titles[id];
+    document.getElementById("pgT").textContent = titles[id] || "Dashboard";
     document.getElementById("pgB").textContent =
-        "Dashboard › " + titles[id];
+        "Dashboard › " + (titles[id] || "Dashboard");
     document.getElementById("sidebar").classList.remove("open");
     // sync bottom nav
     document
@@ -1780,11 +2124,8 @@ function showPage(id, el) {
     else if (id === "labour") renderLabour();
     else if (id === "materials") renderMaterials();
     else if (id === "cashbook") renderCash();
-    else if (id === "masters") {
-        renderSites();
-        renderWorkers();
-        renderMatMaster();
-    }
+    else if (id === "sites") renderSites();
+    else if (id === "workers") renderWorkers();
     // resize charts after page switch
     setTimeout(() => {
         if (trendChart2) trendChart2.resize();
@@ -1831,36 +2172,46 @@ async function exportData() {
             dbGet("material_entries"),
             dbGet("cashbook"),
         ]);
-    const blob = new Blob(
-        [
-            JSON.stringify(
-                {
-                    sites,
-                    workers,
-                    materials_master: matMaster,
-                    attendance: attend,
-                    material_entries: mats,
-                    cashbook: cash,
-                },
-                null,
-                2,
-            ),
-        ],
-        { type: "application/json" },
-    );
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "RamaConstruction-" + getToday() + ".json";
-    a.click();
-    toast("Data exported!");
+        
+    const wb = XLSX.utils.book_new();
+
+    // Add sheets for all full database sets
+    if (sites && sites.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sites), "Sites");
+    if (workers && workers.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(workers), "Workers");
+    if (matMaster && matMaster.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(matMaster), "Materials Master");
+    if (attend && attend.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(attend), "Attendance");
+    if (mats && mats.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mats), "Material Entries");
+    if (cash && cash.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cash), "Cashbook");
+    
+    // Fallback if empty database
+    if (wb.SheetNames.length === 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{ Notice: "No data found" }]), "Empty");
+    }
+
+    XLSX.writeFile(wb, "RamaConstruction-" + getToday() + ".xlsx");
+    toast("Full Database Exported as Excel!");
 }
 
 // ── SIDEBAR TOGGLE (mobile) ──
+/* Accordion Toggle */
+function toggleAccordion(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isHidden = el.style.display === 'none';
+    el.style.display = isHidden ? 'block' : 'none';
+}
+
 function toggleSidebar() {
     const sb = document.getElementById("sidebar");
     const ov = document.getElementById("sidebarOverlay");
-    const isOpen = sb.classList.toggle("open");
-    if (ov) ov.classList.toggle("show", isOpen);
+    if (window.innerWidth > 900) {
+        sb.classList.toggle("minimized");
+        // Save state
+        localStorage.setItem("sidebarMinimized", sb.classList.contains("minimized"));
+    } else {
+        const isOpen = sb.classList.toggle("open");
+        if (ov) ov.classList.toggle("show", isOpen);
+    }
 }
 function closeSidebar() {
     document.getElementById("sidebar").classList.remove("open");
@@ -1952,9 +2303,9 @@ window.onload = async function () {
     async function renderLabourMobileUI() {
         const page = document.getElementById("page-labour");
         if (!page) return;
-        const anchor = page.querySelector(".fbar");
-        const beforeEl = page.querySelector(".g3");
-        const box = ensureMobileBox(page, "labourMobileView", beforeEl);
+        // Insert mobile view before the main attendance card (first .card after .g4)
+        const mainCard = page.querySelector(".card");
+        const box = ensureMobileBox(page, "labourMobileView", mainCard);
         if (!isPhoneView()) {
             box.innerHTML = "";
             return;
@@ -1965,6 +2316,7 @@ window.onload = async function () {
         const search = (
             document.getElementById("labSearch")?.value || ""
         ).toLowerCase();
+        const statusFilter = document.getElementById("labStatus")?.value || "";
         let E = await dbGet("attendance");
         if (date) E = E.filter((e) => e.date === date);
         if (site) E = E.filter((e) => siteMatch(e, site, "labSite"));
@@ -1976,6 +2328,7 @@ window.onload = async function () {
             E = E.filter((e) =>
                 (e.worker_name || "").toLowerCase().includes(search),
             );
+        if (statusFilter) E = E.filter((e) => e.status === statusFilter);
         E.sort((a, b) =>
             String(b.date || "").localeCompare(String(a.date || "")),
         );
@@ -2202,27 +2555,15 @@ window.onload = async function () {
             if (e.type === "Money Sent") grouped[k].sent += +e.amount || 0;
             else grouped[k].exp += +e.amount || 0;
         });
-
-        const cashCard = (value, label, color, icon) => `
-            <div class="mobile-mini-stat cash-card">
-              <div class="cash-card-icon" style="color:${color}">${icon}</div>
-              <div class="mobile-mini-value" style="color:${color}">${fmtF(value)}</div>
-              <div class="mobile-mini-label">${label}</div>
-            </div>`;
-
         box.innerHTML = `
             <div class="mobile-split-grid">
-              ${cashCard(totalSent, "Total Sent", "#22c55e", "↗")}
-              ${cashCard(totalExp, "Total Expenses", "#ef4444", "↘")}
-              ${cashCard(balance, "Balance", "#3b82f6", "₹")}
-              ${cashCard(labourPaid, "Labour Paid", "#eab308", "◌")}
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#22c55e">↗</div><div class="mobile-mini-value" style="color:#22c55e">${fmtF(totalSent)}</div><div class="mobile-mini-label">Total Sent</div></div>
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#ef4444">↘</div><div class="mobile-mini-value" style="color:#ef4444">${fmtF(totalExp)}</div><div class="mobile-mini-label">Total Expenses</div></div>
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#3b82f6">₹</div><div class="mobile-mini-value" style="color:#3b82f6">${fmtF(balance)}</div><div class="mobile-mini-label">Balance</div></div>
+              <div class="mobile-mini-stat"><div class="mobile-mini-icon" style="color:#eab308">◌</div><div class="mobile-mini-value" style="color:#eab308">${fmtF(labourPaid)}</div><div class="mobile-mini-label">Labour Paid</div></div>
             </div>
-            <div class="mobile-mini-stat cash-card" style="margin-bottom:14px">
-              <div class="cash-card-icon" style="color:#f59e0b">📦</div>
-              <div class="mobile-mini-value" style="color:#f97316">${fmtF(materialPurchased)}</div>
-              <div class="mobile-mini-label">Material Purchased</div>
-            </div>
-            <div class="mobile-cash-ledger-card">
+            <div class="mobile-mini-stat" style="margin-bottom:14px"><div class="mobile-mini-icon" style="color:#f97316">📦</div><div class="mobile-mini-value" style="color:#f97316">${fmtF(materialPurchased)}</div><div class="mobile-mini-label">Material Purchased</div></div>
+            <div class="mobile-white-card">
               <div class="mobile-section-title">💰 Transactions</div>
               <div class="mobile-list" style="margin-top:12px">
                 ${E.length
@@ -2243,30 +2584,27 @@ window.onload = async function () {
             }
               </div>
             </div>
-            <div class="mobile-cash-ledger-card">
+            <div class="mobile-white-card">
               <div class="mobile-section-title">🏗 Site Balance</div>
-              <div style="margin-top:12px;overflow:auto">
-                <table class="mobile-cash-balance-table">
-                  <thead>
-                    <tr><th>Site</th><th>Sent</th><th>Expenses</th><th>Balance</th></tr>
-                  </thead>
-                  <tbody>
-                    ${Object.keys(grouped).length
+              <div class="mobile-list" style="margin-top:12px">
+                ${Object.keys(grouped).length
                 ? Object.entries(grouped)
                     .map(
                         ([name, v]) => `
-                      <tr>
-                        <td>${esc(name)}</td>
-                        <td style="color:#f59e0b">${fmtF(v.sent)}</td>
-                        <td style="color:#ef4444">${fmtF(v.exp)}</td>
-                        <td style="color:${v.sent - v.exp >= 0 ? "#22c55e" : "#ef4444"}">${fmtF(v.sent - v.exp)}</td>
-                      </tr>`,
+                  <div class="mobile-entry">
+                    <div class="mobile-entry-top" style="margin-bottom:0">
+                      <div class="mobile-entry-name">${esc(name)}</div>
+                      <div class="mobile-amount ${v.sent - v.exp >= 0 ? "pos" : "neg"}">${fmtF(v.sent - v.exp)}</div>
+                    </div>
+                    <div class="mobile-meta-grid" style="margin-top:10px">
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Sent</div><div class="mobile-meta-value" style="color:#f97316">${fmtF(v.sent)}</div></div>
+                      <div class="mobile-meta-item"><div class="mobile-meta-label">Expenses</div><div class="mobile-meta-value" style="color:#ef4444">${fmtF(v.exp)}</div></div>
+                    </div>
+                  </div>`,
                     )
                     .join("")
-                : '<tr><td colspan="4" class="mobile-empty">No site balance data.</td></tr>'
+                : '<div class="mobile-empty">No site balance data.</div>'
             }
-                  </tbody>
-                </table>
               </div>
             </div>`;
     }
@@ -2274,58 +2612,14 @@ window.onload = async function () {
     async function renderSitesMobileUI() {
         const wrap = document.getElementById("ms-sites");
         if (!wrap) return;
-        const beforeEl = wrap.querySelector(".card");
-        const box = ensureMobileBox(wrap, "sitesMobileView", beforeEl);
-        if (!isPhoneView()) {
-            box.innerHTML = "";
-            return;
-        }
+        // On mobile, the accordion layout is already mobile-friendly.
+        // No need to create a separate mobile view - just ensure search uses new input
+        if (!isPhoneView()) return;
+        // Update search ref to use new input
         const search = (
-            wrap.querySelector(".fbar input")?.value || ""
+            document.getElementById("siteSearchInp")?.value || ""
         ).toLowerCase();
-        let rows = await dbGet("sites");
-        if (search)
-            rows = rows.filter((s) =>
-                [s.name, s.city, s.address, s.supervisor_name, s.phone].some(
-                    (v) => (v || "").toLowerCase().includes(search),
-                ),
-            );
-        const canEditSite = can("canEditSite");
-        const canDeleteSite = can("canDeleteSite");
-        box.innerHTML = rows.length
-            ? rows
-                .map((s, i) => {
-                    const eng = Array.isArray(s.engineers)
-                        ? s.engineers.length
-                        : String(s.engineers || "").trim()
-                            ? String(s.engineers).split(",").filter(Boolean).length
-                            : 0;
-                    const sup = s.supervisor_name || s.supervisor || "–";
-                    const location = s.city || s.address || "–";
-                    return `
-              <div class="mobile-master-card">
-                <div class="mobile-master-head">
-                  <div class="mobile-master-left">
-                    <div class="mobile-master-avatar">🏗</div>
-                    <div>
-                      <div class="mobile-master-code">${padCode(i + 1)}</div>
-                      <div class="mobile-master-name">${esc(s.name || "")}</div>
-                      <div class="mobile-master-sub">${esc(location)}</div>
-                    </div>
-                  </div>
-                  <span class="badge ${statusBadgeClass(s.status || "Active")}">${esc(s.status || "Active")}</span>
-                </div>
-                <div class="mobile-master-meta-grid">
-                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Start Date</div><div class="mobile-meta-value">${fmtDate(s.start_date || s.date || "–")}</div></div>
-                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Supervisor</div><div class="mobile-meta-value">${esc(sup)}</div></div>
-                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Engineers</div><div class="mobile-meta-value">${eng} assigned</div></div>
-                  <div class="mobile-master-meta-box"><div class="mobile-meta-label">Phone</div><div class="mobile-meta-value">${esc(s.phone || "–")}</div></div>
-                </div>
-                ${actionBtns(`editSite('${s.id}')`, `deleteSite('${s.id}')`, canEditSite, canDeleteSite)}
-              </div>`;
-                })
-                .join("")
-            : '<div class="mobile-empty">No sites found.</div>';
+        // The accordion is already rendered by renderSites(), nothing extra needed.
     }
 
     async function renderWorkersMobileUI() {
@@ -2481,5 +2775,45 @@ window.onload = async function () {
     };
 
     window.addEventListener("load", applyMobileHooks);
-    window.addEventListener("resize", renderAllMobileViews);
+    // init app
+(function initApp() {
+    const saved = localStorage.getItem("theme") || "light";
+    document.body.setAttribute("data-theme", saved);
+    
+    // Resume sidebar state
+    const sb = document.getElementById("sidebar");
+    if (sb && localStorage.getItem("sidebarMinimized") === "true" && window.innerWidth > 900) {
+        sb.classList.add("minimized");
+    }
+
+    setTimeout(() => {
+        const btn = document.getElementById("themeToggleBtn");
+        if (btn) btn.innerHTML = saved === "dark" ? "☀️" : "🌙";
+    }, 100);
+})();
+window.addEventListener("resize", renderAllMobileViews);
+})();
+// === END MOBILE UI REFRESH PATCH ===
+
+// ── THEME TOGGLE ──
+function toggleTheme() {
+    const currentTheme = document.body.getAttribute("data-theme") || "light";
+    const newTheme = currentTheme === "light" ? "dark" : "light";
+    document.body.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+    
+    // Set color-scheme on root
+    document.documentElement.style.colorScheme = newTheme;
+    const btn = document.getElementById("themeToggleBtn");
+    if (btn) btn.innerHTML = newTheme === "dark" ? "☀️" : "🌙";
+}
+
+// init theme
+(function initTheme() {
+    const saved = localStorage.getItem("theme") || "light";
+    document.body.setAttribute("data-theme", saved);
+    setTimeout(() => {
+        const btn = document.getElementById("themeToggleBtn");
+        if (btn) btn.innerHTML = saved === "dark" ? "☀️" : "🌙";
+    }, 100);
 })();
