@@ -282,10 +282,19 @@ async function doLogout() {
     document.getElementById("li_err").textContent = "";
     document.getElementById("li_email").value = "";
     document.getElementById("li_pass").value = "";
+    // Hide AI FAB on logout
+    const fab = document.querySelector(".ai-chat-fab");
+    if (fab) fab.style.display = "none";
+    // Close chat panel if open
+    const panel = document.getElementById("aiChatPanel");
+    if (panel) panel.classList.remove("active");
 }
 async function showApp(user) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("appWrapper").style.display = "flex";
+    // Show AI assistant FAB now that user is authenticated
+    const fab = document.querySelector(".ai-chat-fab");
+    if (fab) fab.style.display = "flex";
     currentRole =
         (user.user_metadata && user.user_metadata.role) || "supervisor";
     const name =
@@ -341,7 +350,25 @@ function applyRoleVisibility() {
     const tdEl = document.getElementById("todayDate");
     if (tdEl) tdEl.textContent = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
     const phEl = document.getElementById("pageHeaderDate");
-    if (phEl) phEl.textContent = tdEl ? tdEl.textContent : new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    const phInput = document.getElementById("headerDateInput");
+    const todayStr = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    if (phEl) phEl.textContent = todayStr;
+    if (phInput) {
+        // Set hidden input to today's value (YYYY-MM-DD format required by input[type=date])
+        const now = new Date();
+        phInput.value = now.toISOString().split('T')[0];
+    }
+}
+
+// ── DATE PICKER HANDLER ──
+function onHeaderDateChange(val) {
+    if (!val) return;
+    const d = new Date(val + 'T00:00:00');
+    const formatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const phEl = document.getElementById("pageHeaderDate");
+    if (phEl) phEl.textContent = formatted;
+    // Optionally re-render data filtered to chosen date
+    // renderAll(); // Uncomment if you want date-based filtering
 }
 
 // ── INIT ──
@@ -554,7 +581,12 @@ function calcMatAmt() {
 
 // ── MODAL HELPERS ──
 function openModal(id) {
-    document.getElementById(id).classList.add("open");
+    const overlay = document.getElementById(id);
+    overlay.classList.add("open");
+    // Close modal when clicking the backdrop (outside the .modal box)
+    overlay.onclick = function(e) {
+        if (e.target === overlay) closeModal(id);
+    };
     // Reset type toggles to their defaults when opening fresh
     if (id === 'cashModal') {
         const ms = document.getElementById('cashTypeMS');
@@ -1304,16 +1336,16 @@ async function renderOverview() {
     const barListEl = document.getElementById("siteBarList");
     if(barListEl) barListEl.innerHTML = siteCostsData.map(sc => {
         const pct = Math.round((sc.cost / maxCost) * 100);
-        return `<div class="site-bar-row">
-            <div class="site-bar-info"><span>${sc.name}</span><span>${pct}%</span></div>
-            <div class="site-bar-track"><div class="site-bar-fill" style="width: ${pct}%"></div></div>
+        return `<div class="sbar-wrap">
+            <div class="sbar-lbl"><span>${sc.name}</span><span>${pct}%</span></div>
+            <div class="sbar-bg"><div class="sbar-fill" style="width: ${pct}%"></div></div>
         </div>`;
-    }).join("") || '<div style="text-align:center; padding: 20px; color: var(--muted);">No cost data yet.</div>';
+    }).join("") || '<div style="text-align:center; padding: 20px; color: #94a3b8;">No cost data yet.</div>';
 
     // ── SITE SUMMARY TABLE ──
     const ovTableEl = document.getElementById("ovTable");
     if(ovTableEl) ovTableEl.innerHTML = filtSites.length === 0
-        ? '<tr><td colspan="4" style="text-align:center; padding: 40px; color: var(--muted);">No sites found.</td></tr>'
+        ? '<tr><td colspan="4" style="text-align:center; padding: 40px; color: #94a3b8;">No sites found.</td></tr>'
         : filtSites.map(s => {
             const sL = attend.filter(a => a.site_id === s.id || a.site_name === s.name).reduce((t, a) => t + (a.pay || 0), 0);
             const sM = mats.filter(m => (m.site_id === s.id || m.site_name === s.name) && m.type === "In").reduce((t, m) => t + (m.amount || 0), 0);
@@ -1321,7 +1353,7 @@ async function renderOverview() {
             const sExp = cash.filter(c => (c.site_id === s.id || c.site_name === s.name) && c.type === "Expense").reduce((t, c) => t + (c.amount || 0), 0);
             const sBal = sSent - sExp;
             return `<tr>
-                <td style="font-weight: 700; color: var(--text); padding-left: 0;">${s.name}</td>
+                <td style="font-weight: 700; color: var(--text);">${s.name}</td>
                 <td>${fmt(sL)}</td>
                 <td>${fmt(sM)}</td>
                 <td style="color: ${sBal >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 700; text-align: right;">${fmt(sBal)}</td>
@@ -1345,15 +1377,20 @@ async function renderOverview() {
         {
             type: "line",
             data: {
-                labels: days.map((d) => d.slice(5)),
+                labels: days.map((d) => {
+                    const daysMap = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                    return daysMap[new Date(d).getDay()];
+                }),
                 datasets: [
                     {
                         label: "Labour Cost",
                         data: dData,
-                        borderColor: "#f97316",
-                        backgroundColor: "rgba(249,115,22,.1)",
+                        borderColor: "#eab308",
+                        backgroundColor: "rgba(234, 179, 8, 0.1)",
                         fill: true,
                         tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#eab308"
                     },
                 ],
             },
@@ -1361,7 +1398,17 @@ async function renderOverview() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } },
+                scales: { 
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: "#94a3b8", font: { size: 11 } }
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        grid: { color: "rgba(255,255,255,0.03)" },
+                        ticks: { color: "#94a3b8", font: { size: 11 } }
+                    }
+                },
             },
         },
     );
@@ -1516,13 +1563,22 @@ async function renderLabour() {
     );
 }
 
-// ════════════ RENDER MATERIALS ════════════
+function setMatTypeFilter(val) {
+    document.getElementById('matType').value = val;
+    const btns = document.querySelectorAll('.btn-mat-type');
+    btns.forEach(b => b.classList.remove('active'));
+    if(event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+    renderMaterials();
+}
+
 async function renderMaterials() {
     const site = document.getElementById("matSite").value,
         name = document.getElementById("matName").value;
-    const type = document.getElementById("matType").value,
-        date = document.getElementById("matDate").value;
+    const type = document.getElementById("matType").value;
     const search = document.getElementById("matSearch").value.toLowerCase();
+    
     let E = await dbGet("material_entries");
     if (site) {
         const _sName = (
@@ -1536,57 +1592,58 @@ async function renderMaterials() {
                 (e.site_name && e.site_name.trim() === _sName),
         );
     }
-    if (name)
-        E = E.filter(
-            (e) => (e.material_name || "").toLowerCase() === name.toLowerCase(),
-        );
+    if (name) E = E.filter((e) => (e.material_name || "").toLowerCase() === name.toLowerCase());
     if (type) E = E.filter((e) => e.type === type);
-    if (date) E = E.filter((e) => e.date === date);
+    
     E.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-    if (search)
+    
+    if (search) {
         E = E.filter(
             (e) =>
                 (e.material_name || "").toLowerCase().includes(search) ||
                 (e.party || "").toLowerCase().includes(search),
         );
-    const inVal = E.filter((e) => e.type === "In").reduce(
-        (s, e) => s + (e.amount || 0),
-        0,
-    );
-    const outVal = E.filter((e) => e.type === "Out").reduce(
-        (s, e) => s + (e.amount || 0),
-        0,
-    );
-    document.getElementById("matInVal").textContent = fmtF(inVal);
-    document.getElementById("matOutVal").textContent = fmtF(outVal);
-    document.getElementById("matInCnt").textContent = E.filter(
-        (e) => e.type === "In",
-    ).length;
-    document.getElementById("matOutCnt").textContent = E.filter(
-        (e) => e.type === "Out",
-    ).length;
+    }
+
+    const inVal = E.filter((e) => e.type === "In").reduce((s, e) => s + (e.amount || 0), 0);
+    const outVal = E.filter((e) => e.type === "Out").reduce((s, e) => s + (e.amount || 0), 0);
+    
+    const elInVal = document.getElementById("matInVal");
+    const elOutVal = document.getElementById("matOutVal");
+    const elInCnt = document.getElementById("matInCnt");
+    const elOutCnt = document.getElementById("matOutCnt");
+
+    if (elInVal) elInVal.textContent = fmt(inVal);
+    if (elOutVal) elOutVal.textContent = fmt(outVal);
+    if (elInCnt) elInCnt.textContent = E.filter((e) => e.type === "In").length;
+    if (elOutCnt) elOutCnt.textContent = E.filter((e) => e.type === "Out").length;
     
     const canEdit = can("canEditMatEntry"),
         canDel = can("canDeleteMatEntry");
     
-    document.getElementById("matTable").innerHTML =
-        E.map(
-            (e) => `<tr>
-    <td>${e.date || ""}</td>
-    <td><strong>${e.material_name || ""}</strong></td>
-    <td>${e.site_name || ""}</td>
-    <td><span class="badge ${e.type === "In" ? "bg-green" : "bg-orange"}">${e.type}</span></td>
-    <td>${e.qty || 0} ${e.unit || ""}</td>
-    <td><strong>${fmtF(e.amount)}</strong></td>
-    <td style="text-align:right;white-space:nowrap">
-        ${canEdit ? `<button class="btn-sm-edit" onclick="editMatEntry('${e.id}')">✏️</button>` : ""}
-        ${canDel ? `<button class="btn-sm-danger" onclick="deleteMatEntry('${e.id}')">🗑</button>` : ""}
-    </td>
-  </tr>`,
-        ).join("") ||
-        '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No entries matching filter.</td></tr>';
+    const matTable = document.getElementById("matTable");
+    if (matTable) {
+        matTable.innerHTML = E.map((e) => {
+            const badgeCls = e.type === "In" ? "badge-in" : "badge-out";
+            const typeStr = e.type === "In" ? "📥 IN" : "📤 OUT";
+            return `<tr>
+                <td>${e.date || ""}</td>
+                <td style="font-weight: 500;">${e.material_name || ""}</td>
+                <td>${e.site_name || ""}</td>
+                <td><span class="${badgeCls}">${typeStr}</span></td>
+                <td>${e.qty || 0} ${e.unit || ""}</td>
+                <td>₹${e.rate || 0}</td>
+                <td class="mat-amount-td">₹${fmt(e.amount)}</td>
+                <td>${e.party || "-"}</td>
+                <td style="text-align:right;white-space:nowrap">
+                    ${canEdit ? `<button class="mat-action-btn" onclick="editMatEntry('${e.id}')">✏️</button>` : ""}
+                    ${canDel ? `<button class="mat-action-btn" onclick="deleteMatEntry('${e.id}')">🗑</button>` : ""}
+                </td>
+            </tr>`;
+        }).join("") || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">No entries matching filter.</td></tr>';
+    }
 
-    // Stock summary — premium progress bars
+    // Stock summary — updated thin orange progress bars
     let allE = await dbGet("material_entries");
     if (site) {
         const _sn = (document.getElementById("matSite")?.options[document.getElementById("matSite")?.selectedIndex]?.text || "").trim();
@@ -1594,7 +1651,6 @@ async function renderMaterials() {
     }
     const mMast = await dbGet("materials_master");
     
-    // Sort materials by net stock descending for "Top Materials"
     const stockData = mMast.map(m => {
         const inQ = allE.filter(e => e.material_id === m.id && e.type === "In").reduce((s, e) => s + (e.qty || 0), 0);
         const outQ = allE.filter(e => e.material_id === m.id && e.type === "Out").reduce((s, e) => s + (e.qty || 0), 0);
@@ -1603,18 +1659,20 @@ async function renderMaterials() {
         return { name: m.name, net, unit: m.unit, pct };
     }).sort((a, b) => b.net - a.net);
 
-    document.getElementById("stockList").innerHTML =
-        stockData.map(s => `
-            <div class="stock-item" style="margin-bottom:16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-weight:600;font-size:13px;color:var(--text)">${s.name}</span>
-                    <span style="font-size:12px;color:var(--muted)">${s.net} ${s.unit}</span>
-                </div>
-                <div class="progress-track" style="background:var(--bg-input);border-radius:10px;height:8px;position:relative;overflow:hidden;border:1px solid var(--border-light)">
-                    <div class="progress-fill" style="width:${s.pct}%;height:100%;background:linear-gradient(90deg, #3b82f6, #2563eb);border-radius:10px;transition:width 0.5s ease;"></div>
+    const stockList = document.getElementById("stockList");
+    if (stockList) {
+        stockList.innerHTML = stockData.map(s => `
+            <div class="stk-wrap">
+                <div class="stk-title">${s.name}</div>
+                <div class="stk-right">
+                    <div class="stk-bg">
+                        <div class="stk-fill" style="width:${s.pct}%"></div>
+                    </div>
+                    <div class="stk-val">${s.net} ${s.unit}</div>
                 </div>
             </div>
-        `).join("") || '<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px">No stock data.</p>';
+        `).join("") || '<p style="color:var(--muted);font-size:13px;text-align:center;">No stock data available.</p>';
+    }
 }
 
 // ════════════ RENDER CASHBOOK ════════════
@@ -1959,7 +2017,7 @@ async function renderWorkers(q = "") {
             </div>
             <div class="wg-card-body">
                 <div class="wg-info-row"><span class="wg-info-icon">📍</span><span class="wg-info-text">${sName}</span></div>
-                <div class="wg-info-row"><span class="wg-info-icon">📞</span><span class="wg-info-text">${phoneNum}</span></div>
+                ${w.phone ? `<div class="wg-info-row"><span class="wg-info-icon">📞</span><span class="wg-info-text">${w.phone}</span></div>` : ""}
             </div>
             <div class="wg-card-footer">
                 <span class="wg-wage-label">Wage/day</span>
@@ -2817,3 +2875,115 @@ function toggleTheme() {
         if (btn) btn.innerHTML = saved === "dark" ? "☀️" : "🌙";
     }, 100);
 })();
+
+// ════════════ AI ASSISTANT WIDGET LOGIC ════════════
+
+function toggleAIChat() {
+    const panel = document.getElementById("aiChatPanel");
+    panel.classList.toggle("active");
+    if (panel.classList.contains("active")) {
+        document.getElementById("aiChatInput").focus();
+    }
+}
+
+function handleAIChatKeyPress(e) {
+    if (e.key === "Enter") sendAIChatMessage();
+}
+
+function sendAIChatMessage() {
+    const input = document.getElementById("aiChatInput");
+    const text = input.value.trim();
+    if (!text) return;
+    
+    // Add user message
+    addChatMessage(text, "user");
+    input.value = "";
+    
+    // Show typing
+    const typingId = showAITyping();
+    
+    // Simulate AI response delay
+    setTimeout(() => {
+        removeChatMessage(typingId);
+        const reply = simulateAIResponse(text);
+        addChatMessage(reply, "agent");
+    }, 1200 + Math.random() * 800);
+}
+
+function addChatMessage(text, sender) {
+    const body = document.getElementById("aiChatBody");
+    const id = "msg-" + Date.now();
+    const html = `
+        <div id="${id}" class="ai-message ${sender}">
+            <div class="ai-bubble">${escapeHTML(text)}</div>
+        </div>
+    `;
+    body.insertAdjacentHTML("beforeend", html);
+    body.scrollTop = body.scrollHeight;
+    return id;
+}
+
+function showAITyping() {
+    const body = document.getElementById("aiChatBody");
+    const id = "typing-" + Date.now();
+    const html = `
+        <div id="${id}" class="ai-message agent">
+            <div class="ai-bubble ai-typing">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    `;
+    body.insertAdjacentHTML("beforeend", html);
+    body.scrollTop = body.scrollHeight;
+    return id;
+}
+
+function removeChatMessage(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag])
+    );
+}
+
+// Simulated ConstructCo Assistant Backend
+// Replace this function with an actual API call (e.g. to OpenAI/Gemini)
+function simulateAIResponse(input) {
+    const lower = input.toLowerCase();
+    
+    // Check Context
+    const activePage = document.querySelector(".nav-item.active")?.textContent.trim() || document.querySelector(".bnav-item.active")?.textContent.trim() || "Overview";
+    const siteSelect = document.getElementById("globalSiteFilter");
+    const selectedSite = siteSelect ? siteSelect.options[siteSelect.selectedIndex]?.text : "All Sites";
+    
+    if (lower.includes("labour") || lower.includes("worker") || lower.includes("attend")) {
+        return `I can help with labour management. Looking at ${selectedSite}, we have attendance data. Would you like to summarize worker hours or flag absenteeism?`;
+    }
+    if (lower.includes("material") || lower.includes("stock") || lower.includes("cement") || lower.includes("steel")) {
+        return `For material tracking at ${selectedSite}, I can show IN/OUT entries and identify low-stock materials. What specific material do you need?`;
+    }
+    if (lower.includes("cash") || lower.includes("expense") || lower.includes("balance") || lower.includes("money")) {
+        return `Checking the Cashbook for ${selectedSite}. I can summarize income/expenses, calculate net balance, or flag unusual transactions.`;
+    }
+    if (lower.includes("site") || lower.includes("performance") || lower.includes("progress")) {
+        return `Sites Overview: I can list active sites, compare site-wise performance, and show detailed site summaries.`;
+    }
+    if (lower.includes("hello") || lower.includes("hi ") || lower === "hi") {
+        return `Hello! ConstructCo Assistant here. Context is set to: [Site: ${selectedSite} | Module: ${activePage}]. I'm here to ensure smooth operations. How can I help?`;
+    }
+    if (lower.includes("export") || lower.includes("download") || lower.includes("excel")) {
+        return "You can export the data to excel directly using the Export button located mapping at the top right of your dashboard. Would you like me to trigger a data dump?";
+    }
+    
+    // Fallback based on system prompt constraints (Concise, action-oriented)
+    return `As the ConstructCo Assistant, I prioritize concise, action-oriented answers. You are currently viewing ${selectedSite}. Please format requests focusing on Labour, Materials, Cashbook, Sites, or Workers workflows.`;
+}
