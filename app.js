@@ -569,14 +569,25 @@ async function autoFillMat() {
 function calcPay() {
     const wage = parseFloat(document.getElementById("l_wage").value) || 0;
     const st = document.getElementById("l_status").value;
-    document.getElementById("l_pay").value = (
-        st === "Present" ? wage : st === "Half Day" ? wage * 0.5 : 0
-    ).toFixed(2);
+    const pay = st === "Present" ? wage : st === "Half Day" ? wage * 0.5 : 0;
+    document.getElementById("l_pay").value = pay.toFixed(2);
+    // BUG-004: update live hint
+    const hintEl = document.getElementById("labCalcHint");
+    if (hintEl) {
+        if (wage > 0) {
+            hintEl.textContent = `${st} × ₹${wage.toLocaleString('en-IN')} = ₹${pay.toLocaleString('en-IN')}${st === 'Half Day' ? ' (50%)' : ''}`;
+            hintEl.classList.remove('hint-placeholder');
+        } else {
+            hintEl.textContent = 'Status × Wage';
+            hintEl.classList.add('hint-placeholder');
+        }
+    }
 }
 function calcMatAmt() {
     const q = parseFloat(document.getElementById("me_qty").value) || 0;
     const r = parseFloat(document.getElementById("me_rate").value) || 0;
     document.getElementById("me_amt").value = (q * r).toFixed(2);
+    // BUG-004: update material hint on me_amt input (placeholder does this already)
 }
 
 // ── MODAL HELPERS ──
@@ -588,6 +599,16 @@ function openModal(id) {
         if (e.target === overlay) closeModal(id);
     };
     // Reset type toggles to their defaults when opening fresh
+    if (id === 'workerModal') {
+        // BUG-005: clear duplicate error on open
+        const errEl = document.getElementById('workerDuplicateError');
+        if (errEl) errEl.style.display = 'none';
+    }
+    if (id === 'labModal') {
+        // BUG-004: reset calc hint on open
+        const hintEl = document.getElementById('labCalcHint');
+        if (hintEl) { hintEl.textContent = 'Status × Wage'; hintEl.classList.add('hint-placeholder'); }
+    }
     if (id === 'cashModal') {
         const ms = document.getElementById('cashTypeMS');
         const exp = document.getElementById('cashTypeExp');
@@ -841,13 +862,31 @@ async function saveWorker() {
     }
     const obj = {
         name,
-        phone: document.getElementById("w_phone").value,
+        phone: document.getElementById("w_phone").value.trim(),
         gender: document.getElementById("w_gender").value,
         designation: document.getElementById("w_des").value,
         daily_wage: parseFloat(document.getElementById("w_wage").value) || 0,
         site_id: document.getElementById("w_site").value || null,
         status: document.getElementById("w_status").value,
     };
+    // BUG-005: Duplicate check (name + phone + site + designation)
+    if (!editId) {
+        const existing = await dbGet("workers");
+        const isDup = existing.some(w =>
+            w.name.trim().toLowerCase() === obj.name.toLowerCase() &&
+            (w.phone || "").trim() === obj.phone &&
+            (w.site_id || "") === (obj.site_id || "") &&
+            (w.designation || "").toLowerCase() === obj.designation.toLowerCase()
+        );
+        if (isDup) {
+            const errEl = document.getElementById('workerDuplicateError');
+            if (errEl) {
+                errEl.textContent = '⚠️ Worker already exists with the same name, phone, site, and designation.';
+                errEl.style.display = 'block';
+            }
+            return;
+        }
+    }
     try {
         if (editId) await dbUpdate("workers", editId, obj);
         else await dbInsert("workers", obj);
@@ -1174,8 +1213,15 @@ async function saveCash() {
     const date = document.getElementById("c_date").value;
     const siteId = document.getElementById("c_site").value;
     const amt = parseFloat(document.getElementById("c_amt").value) || 0;
+    const party = document.getElementById("c_party").value.trim();
+    // BUG-009: party is now required
     if (!date || !siteId || !amt) {
         toast("Date, site and amount required", false);
+        return;
+    }
+    if (!party) {
+        toast("Party is required", false);
+        document.getElementById("c_party").focus();
         return;
     }
     const sites = await dbGet("sites");
@@ -1188,7 +1234,7 @@ async function saveCash() {
         head: document.getElementById("c_head").value,
         amount: amt,
         mode: document.getElementById("c_mode").value,
-        party: document.getElementById("c_party").value,
+        party: party,  // BUG-009: use validated party
         notes: document.getElementById("c_notes").value,
     };
     try {
@@ -1758,13 +1804,13 @@ async function renderCash() {
     const canEdit = can("canEditCash"),
         canDel = can("canDeleteCash");
     document.getElementById("cashTable").innerHTML =
-        E.map(
+        filtCash.map(
             (e) => `<tr>
     <td>${e.date || ""}</td><td>${e.site_name || ""}</td>
     <td><span class="badge ${e.type === "Money Sent" ? "bg-green" : "bg-red"}">${e.type === "Money Sent" ? "Sent" : "Exp"}</span></td>
     <td>${e.head || ""}</td>
     <td><strong style="color:${e.type === "Money Sent" ? "var(--success)" : "var(--danger)"}">${e.type === "Money Sent" ? "+" : "-"}${fmtF(e.amount)}</strong></td>
-    <td><span class="badge bg-blue">${e.mode || ""}</span></td><td>${e.party || ""}</td><td>${e.notes || ""}</td>
+    <td><span class="badge bg-blue">${e.mode || ""}</span></td><td>${(e.party && e.party.trim()) ? e.party : '—'}</td><td>${e.notes || ""}</td>
     <td style="white-space:nowrap">${canEdit ? `<button class="btn-sm-edit" onclick="editCash('${e.id}')">✏️</button>` : ""}${canDel ? `<button class="btn-sm-danger" onclick="deleteCash('${e.id}')">🗑</button>` : ""}</td>
   </tr>`,
         ).join("") ||
@@ -2987,3 +3033,51 @@ function simulateAIResponse(input) {
     // Fallback based on system prompt constraints (Concise, action-oriented)
     return `As the ConstructCo Assistant, I prioritize concise, action-oriented answers. You are currently viewing ${selectedSite}. Please format requests focusing on Labour, Materials, Cashbook, Sites, or Workers workflows.`;
 }
+// == BUG-010: Topbar date drives filter (globalActiveDate) ==
+function getActiveDate() {
+    return localStorage.getItem('constructco_activeDate') || new Date().toISOString().split('T')[0];
+}
+// The existing onHeaderDateChange already handles date picking.
+// Extend it to broadcast the date globally.
+(function patchHeaderDate() {
+    const orig = window.onHeaderDateChange;
+    window.onHeaderDateChange = function(val) {
+        if (val) {
+            localStorage.setItem('constructco_activeDate', val);
+            window.dispatchEvent(new CustomEvent('activeDateChanged', { detail: val }));
+        }
+        if (typeof orig === 'function') orig(val);
+    };
+    // Init: set stored date on the hidden input and label
+    document.addEventListener('DOMContentLoaded', function() {
+        const saved = localStorage.getItem('constructco_activeDate');
+        const inp = document.getElementById('headerDateInput');
+        const lbl = document.getElementById('pageHeaderDate');
+        if (saved && inp) {
+            inp.value = saved;
+            if (lbl) {
+                const d = new Date(saved + 'T00:00:00');
+                lbl.textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+        }
+    });
+})();
+
+// == BUG-012: Login page theme toggle ==
+function toggleLoginTheme() {
+    const current = document.body.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    document.documentElement.style.colorScheme = next;
+    const icon = document.getElementById('loginThemeIcon');
+    if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+}
+// Init login theme icon after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+    const saved = localStorage.getItem('theme') || 'light';
+    const icon = document.getElementById('loginThemeIcon');
+    if (icon) icon.textContent = saved === 'dark' ? '☀️' : '🌙';
+    // BUG-013: init Lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
