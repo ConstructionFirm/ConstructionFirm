@@ -4,20 +4,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RamaConstruction – Management System</title>
+  <title>ConstructCo — Construction Management System</title>
+  <meta name="description" content="ConstructCo is a powerful construction management platform for managing labour, materials, cashbook, sites and workers." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Lucide Icons CDN (BUG-013) -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
-    rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
   <!-- ════════════ LOGIN SCREEN ════════════ -->
+  <!-- BUG-012: Login theme toggle — must run BEFORE paint to avoid flash -->
+  <script>
+    (function () {
+      var saved = localStorage.getItem('theme');
+      var osDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (osDark ? 'dark' : 'light');
+      document.body && document.body.setAttribute('data-theme', theme);
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.setAttribute('data-theme', theme);
+      });
+    })();
+  </script>
   <div id="loginScreen" class="split-login">
     <div class="login-left">
       <div class="circles-bg">
@@ -67,6 +80,10 @@
 
     <!-- Right Auth Pane -->
     <div class="login-right">
+      <!-- BUG-012: Theme toggle button on login page -->
+      <button id="loginThemeToggle" class="login-theme-btn" onclick="toggleLoginTheme()" aria-label="Toggle theme">
+        <span id="loginThemeIcon">🌙</span>
+      </button>
       <!-- Mobile Header (Hidden on Desktop) -->
       <div class="mobile-header">
         <div class="logo-icon-lg">🏗️</div>
@@ -171,23 +188,23 @@
       </div>
       <div class="nav-section">Main</div>
       <div class="nav-item active" id="navOverview" onclick="showPage('overview', this)">
-        <span>🏠</span><span class="nav-label">Overview</span>
+        <i data-lucide="home"></i><span class="nav-label">Overview</span>
       </div>
       <div class="nav-section">Operations</div>
       <div class="nav-item" id="navLabour" onclick="showPage('labour', this)">
-        <span>👷</span><span class="nav-label">Labour</span>
+        <i data-lucide="hard-hat"></i><span class="nav-label">Labour</span>
       </div>
       <div class="nav-item" id="navMaterials" onclick="showPage('materials', this)">
-        <span>🧱</span><span class="nav-label">Materials</span>
+        <i data-lucide="package"></i><span class="nav-label">Materials</span>
       </div>
       <div class="nav-item" id="navCashbook" onclick="showPage('cashbook', this)">
-        <span>💰</span><span class="nav-label">Cashbook</span>
+        <i data-lucide="wallet"></i><span class="nav-label">Cashbook</span>
       </div>
       <div class="nav-item" id="navSites" onclick="showPage('sites', this)">
-        <span>🏗️</span><span class="nav-label">Sites</span>
+        <i data-lucide="building-2"></i><span class="nav-label">Sites</span>
       </div>
       <div class="nav-item" id="navWorkers" onclick="showPage('workers', this)">
-        <span>👥</span><span class="nav-label">Workers</span>
+        <i data-lucide="users"></i><span class="nav-label">Workers</span>
       </div>
       <div class="sidebar-footer">
         <div class="user-info">
@@ -243,10 +260,13 @@
             <div class="page-bread" id="pgB">Dashboard › Overview</div>
           </div>
           <div class="ph-right">
-            <div class="date-picker-wrap" onclick="document.getElementById('headerDateInput').showPicker ? document.getElementById('headerDateInput').showPicker() : document.getElementById('headerDateInput').click()">
+            <div class="date-picker-wrap"
+              onclick="document.getElementById('headerDateInput').showPicker ? document.getElementById('headerDateInput').showPicker() : document.getElementById('headerDateInput').click()">
               <span class="dp-icon">📅</span>
               <span class="dp-label" id="pageHeaderDate">Today</span>
-              <input type="date" id="headerDateInput" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" onchange="onHeaderDateChange(this.value)">
+              <input type="date" id="headerDateInput"
+                style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;"
+                onchange="onHeaderDateChange(this.value)">
             </div>
             <div class="site-filter">
               <select class="ph-select" id="gSite" onchange="syncGlobalSite('gSite')">
@@ -854,6 +874,8 @@
         </div>
       </div>
       <div class="mf">
+        <!-- BUG-005: Duplicate worker error message -->
+        <p id="workerDuplicateError" class="worker-dup-error" style="display:none;"></p>
         <button class="btn-modal-cancel" onclick="closeModal('workerModal')">
           Cancel
         </button>
@@ -1048,7 +1070,8 @@
                   " placeholder="0.00" />
             </div>
           </div>
-          <span class="m-calc-hint">Based on status &amp; wage</span>
+          <!-- BUG-004: live calc hint -->
+          <span class="m-calc-hint" id="labCalcHint">Status × Wage</span>
         </div>
       </div>
       <div class="mf">
@@ -1286,7 +1309,9 @@
           <div class="m-section-label">Party Details</div>
           <div class="row">
             <div>
-              <label>Paid To / From</label><input id="c_party" placeholder="e.g. Raj Kumar or JSW Steel" />
+              <!-- BUG-009: Party field — required text input -->
+              <label>Party <span style="color:var(--danger)">*</span></label>
+              <input id="c_party" placeholder="e.g. Raj Kumar or JSW Steel" required />
             </div>
             <div>
               <label>Notes</label><input id="c_notes" placeholder="Brief description" />
@@ -1324,14 +1349,17 @@
     </div>
     <div class="ai-chat-body" id="aiChatBody">
       <div class="ai-message agent">
-        <div class="ai-bubble">Hello! I am the ConstructCo Assistant. How can I assist you with your operations today?</div>
+        <div class="ai-bubble">Hello! I am the ConstructCo Assistant. How can I assist you with your operations today?
+        </div>
       </div>
     </div>
     <div class="ai-chat-footer">
-      <input type="text" id="aiChatInput" placeholder="Ask about materials, sites, labour..." onkeypress="handleAIChatKeyPress(event)">
+      <input type="text" id="aiChatInput" placeholder="Ask about materials, sites, labour..."
+        onkeypress="handleAIChatKeyPress(event)">
       <button onclick="sendAIChatMessage()">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+          <path
+            d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
         </svg>
       </button>
     </div>
