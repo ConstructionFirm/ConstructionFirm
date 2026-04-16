@@ -5,7 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ConstructCo — Construction Management System</title>
-  <meta name="description" content="ConstructCo is a powerful construction management platform for managing labour, materials, cashbook, sites and workers." />
+  <meta name="description"
+    content="ConstructCo is a powerful construction management platform for managing labour, materials, cashbook, sites and workers." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -15,6 +16,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- ═══ PWA — Manifest + Meta Tags ═══ -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1e40af" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ConstructCo" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 </head>
 
 <body>
@@ -26,7 +36,7 @@
       var osDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       var theme = saved || (osDark ? 'dark' : 'light');
       document.body && document.body.setAttribute('data-theme', theme);
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function () {
         document.body.setAttribute('data-theme', theme);
       });
     })();
@@ -1383,6 +1393,17 @@
       <span class="bnav-icon">💰</span>Cashbook
     </button>
   </div>
+
+  <!-- ═══ PWA — Service Worker Registration ═══ -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function (reg) { console.log('[PWA] SW registered, scope:', reg.scope); })
+          .catch(function (err) { console.error('[PWA] SW registration failed:', err); });
+      });
+    }
+  </script>
 </body>
 
 </html>
